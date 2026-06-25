@@ -3,62 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reserva de Ambientes (Nube y Local)</title>
-    <!-- Tailwind CSS para diseño moderno -->
+    <title>Reserva de Ambientes (Tiempo Real & Exportación)</title>
+    <!-- Tailwind CSS para diseño moderno y responsivo -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons para iconos modernos -->
+    <!-- Lucide Icons para una interfaz de usuario visualmente rica -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         .modal-active { display: flex !important; }
         body.modal-open { overflow: hidden; }
-        /* Animación de carga */
-        .spinner {
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top: 3px solid #ffffff;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
+        
+        /* Animación para resaltar celdas actualizadas por otros usuarios en tiempo real */
+        @keyframes pulseHighlight {
+            0% { background-color: rgba(16, 185, 129, 0.2); border-color: #10b981; transform: scale(1.02); }
+            50% { background-color: rgba(16, 185, 129, 0.4); border-color: #059669; transform: scale(1.04); }
+            100% { background-color: transparent; border-color: transparent; transform: scale(1); }
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .live-update-animation {
+            animation: pulseHighlight 2s ease-out;
+            z-index: 10;
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans transition-all duration-300">
 
     <!-- Encabezado / Navbar -->
     <header class="bg-indigo-700 text-white shadow-md">
         <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
                 <div class="p-2 bg-indigo-600 rounded-lg">
-                    <i data-lucide="cloud-lightning" class="w-8 h-8 text-white"></i>
+                    <i data-lucide="cloud-lightning" class="w-8 h-8 text-white animate-bounce"></i>
                 </div>
                 <div>
                     <h1 class="text-2xl font-bold tracking-tight">Separación de Ambientes</h1>
-                    <p class="text-xs text-indigo-200">Sistema con almacenamiento en tiempo real y persistencia</p>
+                    <p class="text-xs text-indigo-200">Sincronización en vivo y herramientas de exportación activa</p>
                 </div>
             </div>
             
-            <!-- Acciones rápidas y Configuración -->
+            <!-- Acciones rápidas, Exportaciones y Configuración -->
             <div class="flex flex-wrap items-center gap-2">
-                <!-- Indicador de estado de conexión -->
-                <div id="statusConnection" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-800 text-xs text-indigo-200 font-medium border border-indigo-600">
+                <!-- Indicador de estado de conexión en tiempo real -->
+                <div id="statusConnection" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-800 text-xs text-indigo-100 font-medium border border-indigo-600">
                     <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse" id="statusDot"></span>
-                    <span id="statusText">Iniciando...</span>
+                    <span id="statusText">Conectando...</span>
                 </div>
                 
-                <button onclick="abrirModalDB()" class="p-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition shadow-sm text-white" title="Configurar Base de Datos Personal">
-                    <i data-lucide="settings" class="w-5 h-5"></i>
-                </button>
-                <button onclick="exportarDatos()" class="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md text-sm font-medium transition shadow-sm text-white" title="Exportar todas las reservas">
-                    <i data-lucide="download" class="w-4 h-4"></i> Exportar Backup
-                </button>
+                <!-- Menú desplegable para Exportar -->
+                <div class="relative inline-block text-left" id="dropdownExportar">
+                    <button onclick="toggleDropdown()" class="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md text-sm font-medium transition shadow-sm text-white" title="Exportar información">
+                        <i data-lucide="download" class="w-4 h-4"></i> Exportar <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <div id="opcionesExportar" class="hidden absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black/5 focus:outline-none z-30">
+                        <div class="py-1" role="none">
+                            <button onclick="exportarCSVReporte()" class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 w-full text-left font-medium">
+                                <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i> Descargar Agenda (CSV)
+                            </button>
+                            <button onclick="imprimirAgenda()" class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 w-full text-left font-medium">
+                                <i data-lucide="printer" class="w-4 h-4 text-indigo-600"></i> Imprimir Reporte Diario
+                            </button>
+                            <hr class="border-slate-100">
+                            <button onclick="exportarBackupJSON()" class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 w-full text-left font-medium">
+                                <i data-lucide="database-backup" class="w-4 h-4 text-amber-600"></i> Descargar Backup (JSON)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <button onclick="document.getElementById('importFile').click()" class="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md text-sm font-medium transition shadow-sm text-white" title="Importar reservas desde un archivo">
                     <i data-lucide="upload" class="w-4 h-4"></i> Importar
                 </button>
                 <input type="file" id="importFile" class="hidden" accept=".json" onchange="importarDatos(event)">
+
+                <button onclick="abrirModalDB()" class="p-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition shadow-sm text-white" title="Configurar tu Base de Datos en la Nube">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                </button>
             </div>
         </div>
     </header>
@@ -66,7 +83,7 @@
     <!-- Contenido Principal -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col gap-6">
         
-        <!-- Control de Fecha y Resumen -->
+        <!-- Control de Fecha y Resumen de Estado -->
         <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6">
             <div class="w-full md:w-auto flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <label for="fechaSeleccionada" class="font-semibold text-slate-700 flex items-center gap-2 shrink-0">
@@ -88,11 +105,11 @@
                 </div>
             </div>
             
-            <!-- Resumen de Ocupación -->
+            <!-- Resumen de Ocupación actual -->
             <div class="flex flex-wrap gap-4 bg-slate-50 p-3 rounded-lg border border-slate-100 w-full md:w-auto justify-around">
                 <div class="text-center px-4">
                     <span id="txtFechaActual" class="block font-bold text-indigo-700 text-lg">Cargando...</span>
-                    <span class="text-xs text-slate-500">Visualizando horario</span>
+                    <span class="text-xs text-slate-500">Visualizando agenda</span>
                 </div>
                 <div class="border-r border-slate-200 h-10 hidden sm:block"></div>
                 <div class="text-center px-4">
@@ -102,22 +119,25 @@
             </div>
         </div>
 
-        <!-- Leyenda -->
+        <!-- Leyenda explicativa de colores -->
         <div class="flex flex-wrap gap-4 text-xs font-semibold text-slate-600 px-2">
             <span class="flex items-center gap-1.5">
-                <span class="w-4 h-4 rounded border border-slate-300 bg-white inline-block"></span> Disponible (Clic para reservar)
+                <span class="w-4 h-4 rounded border border-slate-300 bg-white inline-block"></span> Disponible (Haz clic en una celda para separar)
             </span>
             <span class="flex items-center gap-1.5">
-                <span class="w-4 h-4 rounded bg-indigo-50 border border-indigo-200 inline-block"></span> Reservado
+                <span class="w-4 h-4 rounded bg-indigo-50 border border-indigo-200 inline-block"></span> Reservado / Ocupado
             </span>
             <span class="flex items-center gap-1.5">
                 <span class="w-4 h-4 rounded bg-amber-50 border border-amber-200 inline-block"></span> Bloqueado / Evento Especial
             </span>
+            <span class="flex items-center gap-1.5 text-emerald-600 animate-pulse">
+                <span class="w-4 h-4 rounded bg-emerald-100 border border-emerald-400 inline-block"></span> Parpadeo Verde: ¡Actualizado recién en línea!
+            </span>
         </div>
 
-        <!-- Tabla Principal -->
+        <!-- Tabla de Turnos y Ambientes -->
         <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden relative">
-            <!-- Overlay de carga -->
+            <!-- Pantalla de carga para sincronización inicial -->
             <div id="loadingOverlay" class="absolute inset-0 bg-white/70 backdrop-blur-xs flex justify-center items-center z-20 transition-opacity duration-200 hidden">
                 <div class="flex flex-col items-center gap-2">
                     <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
@@ -126,10 +146,10 @@
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[800px] border-collapse table-fixed text-left">
+                <table class="w-full min-w-[800px] border-collapse table-fixed text-left" id="tablaReservasImprimir">
                     <thead>
                         <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
-                            <th class="w-24 p-4 font-bold text-center border-r border-slate-200 bg-slate-100 sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                            <th class="w-24 p-4 font-bold text-center border-r border-slate-200 bg-slate-100 sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] col-hora-print">
                                 Hora
                             </th>
                             <th class="p-4 font-bold text-center border-r border-slate-200">Templo</th>
@@ -140,7 +160,7 @@
                         </tr>
                     </thead>
                     <tbody id="cuerpoTabla" class="divide-y divide-slate-100 text-sm">
-                        <!-- Generado por JS -->
+                        <!-- Las filas dinámicas se insertan aquí vía JS -->
                     </tbody>
                 </table>
             </div>
@@ -149,11 +169,11 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-slate-800 text-slate-400 py-6 mt-12 border-t border-slate-700">
+    <footer class="bg-slate-800 text-slate-400 py-6 mt-12 border-t border-slate-700 print:hidden">
         <div class="max-w-7xl mx-auto px-4 text-center text-xs flex flex-col sm:flex-row justify-between items-center gap-3">
-            <p>&copy; 2026 Separación de Ambientes. Los registros se graban automáticamente en tiempo real.</p>
+            <p>&copy; 2026 Separación de Ambientes. Todos los datos están protegidos y sincronizados en tiempo real.</p>
             <p class="flex items-center gap-1">
-                Diseñado con <i data-lucide="heart" class="w-3.5 h-3.5 text-red-500 fill-red-500"></i> para uso continuo.
+                Conectado y listo <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
             </p>
         </div>
     </footer>
@@ -184,34 +204,34 @@
                 </div>
 
                 <div>
-                    <label for="txtNombre" class="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre del Responsable / Grupo</label>
-                    <input type="text" id="txtNombre" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-700" placeholder="Ej. Juan Pérez / Ministerio" required>
+                    <label for="txtNombre" class="block text-xs font-bold text-slate-700 uppercase mb-1">Responsable / Grupo / Ministerio</label>
+                    <input type="text" id="txtNombre" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-700 font-medium" placeholder="Ej. Juan Pérez / Jóvenes" required>
                 </div>
 
                 <div>
-                    <label for="txtActividad" class="block text-xs font-bold text-slate-700 uppercase mb-1">Actividad / Motivo</label>
-                    <textarea id="txtActividad" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-700 text-sm" placeholder="Ej. Reunión general, ensayo, etc."></textarea>
+                    <label for="txtActividad" class="block text-xs font-bold text-slate-700 uppercase mb-1">Descripción / Actividad</label>
+                    <textarea id="txtActividad" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-700 text-sm" placeholder="Ej. Ensayo, reunión general, clase dominical..."></textarea>
                 </div>
 
                 <div>
-                    <label for="selTipo" class="block text-xs font-bold text-slate-700 uppercase mb-1">Estado de la Celda</label>
+                    <label for="selTipo" class="block text-xs font-bold text-slate-700 uppercase mb-1">Tipo de Registro</label>
                     <select id="selTipo" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-700 text-sm">
-                        <option value="reservado">Reservado / Separado</option>
-                        <option value="bloqueado">Bloqueado / No disponible</option>
+                        <option value="reservado">Reservado (Actividad Confirmada)</option>
+                        <option value="bloqueado">Bloqueado / No disponible para uso</option>
                     </select>
                 </div>
             </div>
 
             <div class="bg-slate-50 px-5 py-4 flex flex-col sm:flex-row justify-between items-center gap-2 border-t border-slate-100">
                 <button id="btnEliminar" onclick="eliminarReserva()" class="w-full sm:w-auto px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-lg text-sm transition flex items-center justify-center gap-1">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i> Liberar Espacio
+                    <i data-lucide="trash-2" class="w-4 h-4"></i> Liberar Turno
                 </button>
                 <div class="flex gap-2 w-full sm:w-auto justify-end">
                     <button onclick="cerrarModal()" class="w-full sm:w-auto px-4 py-2 border border-slate-300 hover:bg-slate-100 rounded-lg text-sm font-semibold text-slate-700 transition">
                         Cancelar
                     </button>
                     <button onclick="guardarReserva()" class="w-full sm:w-auto px-4 py-2 bg-indigo-700 hover:bg-indigo-800 text-white font-semibold rounded-lg text-sm shadow-sm transition">
-                        Guardar
+                        Guardar Separación
                     </button>
                 </div>
             </div>
@@ -224,7 +244,7 @@
             <div class="bg-slate-800 text-white p-4 flex justify-between items-center">
                 <div class="flex items-center gap-2">
                     <i data-lucide="database" class="w-5 h-5"></i>
-                    <h3 class="font-bold text-lg">Base de Datos Personal (Firebase)</h3>
+                    <h3 class="font-bold text-lg">Base de Datos Personal (Firebase Cloud)</h3>
                 </div>
                 <button onclick="cerrarModalDB()" class="text-white/80 hover:text-white transition">
                     <i data-lucide="x" class="w-6 h-6"></i>
@@ -233,29 +253,19 @@
             
             <div class="p-5 flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
                 <p class="text-xs text-slate-500 leading-relaxed">
-                    Si abres esta página en tu computadora (fuera de esta plataforma), puedes conectar tu propio proyecto gratuito de Firebase Firestore para seguir teniendo reservas compartidas en línea y tiempo real de manera independiente.
+                    Si decides descargar este archivo y usarlo de forma independiente en tu propia página web o computadora, puedes conectarlo a tu propio panel de Firebase Firestore gratuito para mantener la sincronización colaborativa en vivo de forma permanente.
                 </p>
                 <hr class="border-slate-200">
                 
                 <div>
-                    <label for="dbConfigText" class="block text-xs font-bold text-slate-700 uppercase mb-1">Configuración del Proyecto (JSON)</label>
+                    <label for="dbConfigText" class="block text-xs font-bold text-slate-700 uppercase mb-1">Credenciales del Proyecto (JSON)</label>
                     <textarea id="dbConfigText" rows="6" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm font-mono text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-700" placeholder='{&#10;  "apiKey": "...",&#10;  "authDomain": "...",&#10;  "projectId": "...",&#10;  "storageBucket": "...",&#10;  "messagingSenderId": "...",&#10;  "appId": "..."&#10;}'></textarea>
-                </div>
-                
-                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-slate-600 flex flex-col gap-1.5">
-                    <span class="font-bold text-slate-700 block">¿Cómo obtener estos datos?</span>
-                    <ol class="list-decimal list-inside space-y-1 text-slate-500 text-[11px]">
-                        <li>Entra a <a href="https://console.firebase.google.com/" target="_blank" class="text-indigo-600 underline font-semibold">Firebase Console</a> y crea un proyecto gratuito.</li>
-                        <li>Crea una base de datos "Cloud Firestore" en modo de prueba.</li>
-                        <li>Añade una aplicación Web y copia el objeto <code class="bg-slate-100 px-1 rounded font-mono text-red-600">firebaseConfig</code> que te proporcionen.</li>
-                        <li>Pégalo aquí y presiona "Guardar y Conectar".</li>
-                    </ol>
                 </div>
             </div>
 
             <div class="bg-slate-50 px-5 py-4 flex justify-between items-center border-t border-slate-100">
                 <button onclick="limpiarConfigDB()" class="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold rounded-lg text-xs transition">
-                    Desconectar Nube Personal
+                    Restaurar Modo Por Defecto
                 </button>
                 <div class="flex gap-2">
                     <button onclick="cerrarModalDB()" class="px-4 py-2 border border-slate-300 hover:bg-slate-100 rounded-lg text-sm font-semibold text-slate-700 transition">
@@ -275,19 +285,18 @@
         <p id="toastMessage" class="text-sm font-medium"></p>
     </div>
 
-    <!-- SCRIPT PRINCIPAL USANDO MÓDULOS DE FIREBASE -->
+    <!-- SCRIPT PRINCIPAL CON FIREBASE PARA REAL-TIME -->
     <script type="module">
-        // Importaciones de módulos CDN de Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Parámetros proporcionados por el entorno sandbox (si existen)
+        // Configuración y variables proporcionadas por el sandbox
         const sandboxConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
         const sandboxToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         const sandboxAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        // Configuración de las horas y ambientes
+        // Definiciones de horas y ambientes (idénticos a la foto original)
         const horas = [
             "10:00", "11:00", "12:00", "13:00", "14:00", "15:00",
             "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00"
@@ -300,51 +309,43 @@
             "5to piso atrás"
         ];
 
-        // Estado global de la aplicación
+        // Estado interno de la app
         let fechaActual = "";
-        let reservas = {}; // Datos locales activos
+        let reservas = {}; 
+        let previousReservasDia = {}; // Para comparar cambios colaborativos y animar
+        let celdasAnimar = new Set(); // Guarda las celdas que acaban de actualizarse en la nube
         let celdaActiva = { hora: "", ambiente: "" };
-        let activeUnsubscribe = null; // Para limpiar escuchas de Firebase
+        let activeUnsubscribe = null; 
         
-        // Firebase global instances
         let firebaseApp = null;
         let db = null;
         let auth = null;
         let currentUser = null;
         let isUsingCloud = false;
 
-        // Al iniciar la página
         window.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
-            
-            // 1. Cargar datos locales de LocalStorage por si acaso
             cargarReservasDeAlmacenamiento();
-
-            // 2. Intentar Inicializar Conexión Base de Datos
             await inicializarBaseDeDatos();
-
-            // 3. Configurar fecha actual de inicio (Hoy)
             establecerFechaHoy();
         });
 
-        // Inicializa Firebase si hay configuración del sandbox o configuración personalizada del usuario
+        // Configuración y arranque de la base de datos
         async function inicializarBaseDeDatos() {
-            actualizarEstadoConexion("Conectando...", "yellow-400");
+            actualizarEstadoConexion("Conectando con la nube...", "yellow-400");
             
             let configToUse = null;
             let tokenToUse = null;
             let appId = sandboxAppId;
 
-            // Revisamos si el usuario guardó su propia configuración en LocalStorage (para fuera de aquí)
             const customConfigStr = localStorage.getItem('custom_firebase_config');
-            
             if (customConfigStr) {
                 try {
                     configToUse = JSON.parse(customConfigStr);
                     appId = 'custom-user-app';
                     document.getElementById('dbConfigText').value = JSON.stringify(configToUse, null, 2);
                 } catch(e) {
-                    console.error("Configuración personalizada corrupta", e);
+                    console.error("Configuración personalizada inválida", e);
                 }
             } else if (sandboxConfig) {
                 configToUse = sandboxConfig;
@@ -353,12 +354,11 @@
 
             if (configToUse) {
                 try {
-                    // Inicializar Firebase
                     firebaseApp = initializeApp(configToUse);
                     auth = getAuth(firebaseApp);
                     db = getFirestore(firebaseApp);
 
-                    // Regla de Autenticación antes de Consultas
+                    // Autenticación segura requerida
                     if (tokenToUse) {
                         await signInWithCustomToken(auth, tokenToUse);
                     } else {
@@ -369,8 +369,7 @@
                         currentUser = user;
                         if (user) {
                             isUsingCloud = true;
-                            actualizarEstadoConexion("Sincronizado (Nube)", "emerald-500");
-                            // Recargar la escucha de datos para la fecha seleccionada
+                            actualizarEstadoConexion("Sincronizado Online", "emerald-500");
                             escucharFechaEnTiempoReal();
                         } else {
                             isUsingCloud = false;
@@ -379,60 +378,77 @@
                     });
 
                 } catch (error) {
-                    console.error("Error al iniciar base de datos en la nube:", error);
+                    console.error("Error al arrancar base de datos remota:", error);
                     isUsingCloud = false;
-                    actualizarEstadoConexion("Modo Local (Error de Red)", "red-500");
+                    actualizarEstadoConexion("Offline (Error de Conexión)", "red-500");
                 }
             } else {
                 isUsingCloud = false;
-                actualizarEstadoConexion("Guardado Local Activo", "indigo-400");
+                actualizarEstadoConexion("Modo Local Activo", "indigo-400");
             }
         }
 
-        // Escucha en tiempo real la fecha actual seleccionada en Firestore
+        // Escucha en tiempo real de la fecha seleccionada usando onSnapshot (Actualización instantánea para todos)
         function escucharFechaEnTiempoReal() {
             if (!isUsingCloud || !db || !currentUser) {
                 renderizarTabla();
                 return;
             }
 
-            // Limpiar suscripción previa si existe
             if (activeUnsubscribe) {
                 activeUnsubscribe();
             }
 
             mostrarCargando(true);
 
-            // Regla 1: Usar la estructura estricta de rutas públicas para compartir registros
             const appId = typeof __app_id !== 'undefined' ? __app_id : (localStorage.getItem('custom_firebase_config') ? 'custom-user-app' : 'default-app-id');
+            // Estructura oficial de rutas para persistencia colaborativa en el Sandbox
             const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'reservas_por_fecha', fechaActual);
 
             activeUnsubscribe = onSnapshot(docRef, (docSnapshot) => {
-                if (docSnapshot.exists()) {
-                    // Cargar las reservas de este día que vienen de la nube
-                    reservas[fechaActual] = docSnapshot.data();
-                } else {
-                    // Si no existe el registro en la nube para esta fecha, garantizamos un objeto vacío
-                    reservas[fechaActual] = {};
-                }
+                const nuevosDatos = docSnapshot.exists() ? docSnapshot.data() : {};
                 
-                // Actualizar almacenamiento local para respaldo offline
+                // Comparar cambios con el render anterior para animar destellos de celdas modificadas en vivo
+                detectarActualizacionesEnVivo(nuevosDatos);
+
+                reservas[fechaActual] = nuevosDatos;
+                previousReservasDia = JSON.parse(JSON.stringify(nuevosDatos)); // Clonar para la siguiente comparación
+                
                 guardarEnAlmacenamiento();
                 renderizarTabla();
                 mostrarCargando(false);
             }, (error) => {
-                console.error("Error al obtener datos en tiempo real:", error);
+                console.error("Error en la lectura colaborativa en vivo:", error);
                 mostrarCargando(false);
-                // Si falla la consulta a la nube, mostramos los datos que teníamos en almacenamiento local
                 renderizarTabla();
             });
         }
 
-        // Enviar cambios de la fecha seleccionada a la nube
-        async function subirCambiosANube() {
+        // Detecta qué celdas cambiaron desde la última actualización remota
+        function detectarActualizacionesEnVivo(nuevosDatos) {
+            celdasAnimar.clear();
+            
+            // Recorrer todas las combinaciones posibles de hora y ambiente
+            horas.forEach(hora => {
+                ambientes.forEach(ambiente => {
+                    const clave = `${hora}_${ambiente}`;
+                    const anterior = previousReservasDia[clave];
+                    const nuevo = nuevosDatos[clave];
+
+                    // Si el estado de la reserva cambió (se agregó, eliminó o editó el nombre)
+                    if (JSON.stringify(anterior) !== JSON.stringify(nuevo)) {
+                        // Evitamos animar si el cambio lo hizo este mismo usuario para no distraerlo
+                        celdasAnimar.add(clave);
+                    }
+                });
+            });
+        }
+
+        // Sincroniza de manera precisa utilizando campos individuales (Evita sobrescribir reservas ajenas)
+        async function guardarRegistroNube(claveCelda, datosReserva) {
             if (!isUsingCloud || !db || !currentUser) {
-                // Si solo está en local, guardar localmente es suficiente
                 guardarEnAlmacenamiento();
+                renderizarTabla();
                 return;
             }
 
@@ -440,17 +456,28 @@
                 const appId = typeof __app_id !== 'undefined' ? __app_id : (localStorage.getItem('custom_firebase_config') ? 'custom-user-app' : 'default-app-id');
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'reservas_por_fecha', fechaActual);
                 
-                // Guardar la estructura completa de este día en Firestore
-                const datosDelDia = reservas[fechaActual] || {};
-                await setDoc(docRef, datosDelDia);
+                // Actualizar de forma combinada únicamente la celda que se editó
+                const payload = {};
+                payload[claveCelda] = datosReserva ? datosReserva : deleteField();
+
+                await setDoc(docRef, payload, { merge: true });
                 guardarEnAlmacenamiento();
             } catch (error) {
-                console.error("Error guardando datos en la nube:", error);
-                mostrarToast("Error de conexión. Se guardó de forma local temporalmente.", "wifi-off");
+                console.error("Error al enviar registro a la nube:", error);
+                mostrarToast("No se pudo sincronizar en línea. Guardado localmente.", "wifi-off");
+                // Respaldo de seguridad local
+                if (!reservas[fechaActual]) reservas[fechaActual] = {};
+                if (datosReserva) {
+                    reservas[fechaActual][claveCelda] = datosReserva;
+                } else {
+                    delete reservas[fechaActual][claveCelda];
+                }
+                guardarEnAlmacenamiento();
+                renderizarTabla();
             }
         }
 
-        // Configurar la fecha actual
+        // Configurar la fecha actual en pantalla
         window.cambiarFecha = function(nuevaFecha) {
             fechaActual = nuevaFecha;
             document.getElementById('fechaSeleccionada').value = nuevaFecha;
@@ -461,7 +488,7 @@
             
             document.getElementById('txtFechaActual').textContent = fechaFormateada.charAt(0).toUpperCase() + fechaFormateada.slice(1);
             
-            // Cambiar de fecha dispara escuchar en tiempo real la nueva fecha en Firestore
+            previousReservasDia = {}; // Resetear al cambiar de día
             escucharFechaEnTiempoReal();
         };
 
@@ -479,26 +506,22 @@
             const fechaObj = new Date(fechaActual + 'T00:00:00');
             const hoy = new Date();
             hoy.setHours(0,0,0,0);
-            
             fechaObj.setDate(fechaObj.getDate() - 1);
             
             if (fechaObj < hoy) {
                 mostrarToast("No es posible programar fechas pasadas.", "alert-circle");
                 return;
             }
-            
-            const stringFecha = fechaObj.toISOString().split('T')[0];
-            cambiarFecha(stringFecha);
+            cambiarFecha(fechaObj.toISOString().split('T')[0]);
         };
 
         window.irDiaSiguiente = function() {
             const fechaObj = new Date(fechaActual + 'T00:00:00');
             fechaObj.setDate(fechaObj.getDate() + 1);
-            const stringFecha = fechaObj.toISOString().split('T')[0];
-            cambiarFecha(stringFecha);
+            cambiarFecha(fechaObj.toISOString().split('T')[0]);
         };
 
-        // Renderiza visualmente la tabla de horarios
+        // Dibuja la tabla interactiva de horarios
         function renderizarTabla() {
             const cuerpo = document.getElementById('cuerpoTabla');
             cuerpo.innerHTML = '';
@@ -508,32 +531,41 @@
 
             horas.forEach(hora => {
                 const fila = document.createElement('tr');
-                fila.className = "hover:bg-slate-50/50 transition";
+                fila.className = "hover:bg-slate-50/50 transition duration-150";
 
                 const celdaHora = document.createElement('td');
-                celdaHora.className = "p-4 font-bold text-center text-slate-600 bg-slate-50 border-r border-slate-200 sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]";
+                celdaHora.className = "p-4 font-bold text-center text-slate-600 bg-slate-50 border-r border-slate-200 sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] col-hora-print";
                 celdaHora.textContent = hora;
                 fila.appendChild(celdaHora);
 
                 ambientes.forEach(ambiente => {
                     const celda = document.createElement('td');
-                    celda.className = "p-3 border-r border-slate-200 text-center relative group min-h-[70px] align-middle transition duration-200 cursor-pointer";
+                    celda.className = "p-3 border-r border-slate-200 text-center relative group min-h-[70px] align-middle transition duration-300 cursor-pointer";
                     
                     const claveCelda = `${hora}_${ambiente}`;
                     const reserva = reservasDia[claveCelda];
+
+                    // Aplicar animación de actualización en vivo si se detectó cambio colaborativo
+                    if (celdasAnimar.has(claveCelda)) {
+                        celda.classList.add('live-update-animation');
+                        // Retirar clase de animación después de su ejecución para evitar que se repita
+                        setTimeout(() => {
+                            celda.classList.remove('live-update-animation');
+                        }, 2100);
+                    }
 
                     if (reserva) {
                         ocupados++;
                         if (reserva.tipo === 'bloqueado') {
                             celda.className += " bg-amber-50 hover:bg-amber-100 text-amber-900 border-l-4 border-l-amber-500";
                             celda.innerHTML = `
-                                <div class="font-bold text-xs truncate max-w-[130px] mx-auto">${reserva.nombre || 'BLOQUEADO'}</div>
+                                <div class="font-bold text-xs truncate max-w-[130px] mx-auto text-amber-900">${reserva.nombre || 'BLOQUEADO'}</div>
                                 <div class="text-[10px] text-amber-700 truncate max-w-[130px] mx-auto">${reserva.actividad || 'No disponible'}</div>
                             `;
                         } else {
                             celda.className += " bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border-l-4 border-l-indigo-500";
                             celda.innerHTML = `
-                                <div class="font-bold text-xs truncate max-w-[130px] mx-auto">${reserva.nombre}</div>
+                                <div class="font-bold text-xs truncate max-w-[130px] mx-auto text-indigo-900">${reserva.nombre}</div>
                                 <div class="text-[10px] text-indigo-700 truncate max-w-[130px] mx-auto">${reserva.actividad || 'Actividad general'}</div>
                             `;
                         }
@@ -555,7 +587,7 @@
             document.getElementById('indicadorOcupacion').textContent = `${ocupados} / ${totalCeldas}`;
         }
 
-        // Operaciones de Modal de Reserva
+        // Abrir formulario
         window.abrirModal = function(hora, ambiente) {
             celdaActiva = { hora, ambiente };
             
@@ -600,57 +632,152 @@
             }, 150);
         };
 
-        // Guarda la reserva de forma local y nube
+        // Guardar cambios en local y enviar a la nube en tiempo real
         window.guardarReserva = async function() {
             const nombre = document.getElementById('txtNombre').value.trim();
             const actividad = document.getElementById('txtActividad').value.trim();
             const tipo = document.getElementById('selTipo').value;
 
             if (!nombre) {
-                mostrarToast("Por favor, ingresa el nombre de la persona o grupo responsable.", "alert-triangle");
+                mostrarToast("Por favor, ingresa el responsable o ministerio.", "alert-triangle");
                 document.getElementById('txtNombre').focus();
                 return;
             }
 
-            if (!reservas[fechaActual]) {
-                reservas[fechaActual] = {};
-            }
+            const claveCelda = `${celdaActiva.hora}_${celdaActiva.ambiente}`;
+            const datosReserva = { nombre, actividad, tipo };
 
+            // Ejecutar guardado en la nube
+            await guardarRegistroNube(claveCelda, datosReserva);
+            
+            cerrarModal();
+            mostrarToast("Registro guardado e informado en línea.", "check-circle");
+        };
+
+        // Eliminar reserva de la grilla
+        window.eliminarReserva = async function() {
             const claveCelda = `${celdaActiva.hora}_${celdaActiva.ambiente}`;
             
-            reservas[fechaActual][claveCelda] = {
-                nombre: nombre,
-                actividad: actividad,
-                tipo: tipo
-            };
-
-            // Guarda y sincroniza
-            await subirCambiosANube();
-            renderizarTabla();
+            // Enviar borrado a la nube (pasa null como datos de reserva)
+            await guardarRegistroNube(claveCelda, null);
+            
             cerrarModal();
-            mostrarToast("Registro grabado exitosamente.", "check-circle");
+            mostrarToast("Espacio liberado y actualizado en vivo.", "trash-2");
         };
 
-        // Elimina o libera una celda reservada
-        window.eliminarReserva = async function() {
-            if (!reservas[fechaActual]) return;
-
-            const claveCelda = `${celdaActiva.hora}_${celdaActiva.ambiente}`;
-            if (reservas[fechaActual][claveCelda]) {
-                delete reservas[fechaActual][claveCelda];
+        // Exportación de Agenda Diaria a CSV compatible con Microsoft Excel
+        window.exportarCSVReporte = function() {
+            try {
+                const reservasDia = reservas[fechaActual] || {};
                 
-                if (Object.keys(reservas[fechaActual]).length === 0) {
-                    delete reservas[fechaActual];
-                }
+                // Construcción del contenido del CSV
+                let csvContent = "\uFEFF"; // BOM para asegurar codificación UTF-8 correcta en Excel
+                csvContent += "FECHA: " + fechaActual + "\r\n";
+                csvContent += "HORA;TEMPLO;2DO PISO;4TO PISO;5TO PISO ADELANTE;5TO PISO ATRÁS\r\n";
 
-                await subirCambiosANube();
-                renderizarTabla();
-                cerrarModal();
-                mostrarToast("Espacio liberado y grabado.", "trash-2");
+                horas.forEach(hora => {
+                    let filaCSV = hora;
+                    ambientes.forEach(ambiente => {
+                        const clave = `${hora}_${ambiente}`;
+                        const reserva = reservasDia[clave];
+                        if (reserva) {
+                            const nombreLimpio = reserva.nombre.replace(/;/g, ' ');
+                            const descLimpia = (reserva.actividad || 'Actividad').replace(/;/g, ' ');
+                            filaCSV += `;"${nombreLimpio} (${descLimpia})"`;
+                        } else {
+                            filaCSV += ";\"Disponible\"";
+                        }
+                    });
+                    csvContent += filaCSV + "\r\n";
+                });
+
+                // Descarga del archivo
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.setAttribute('download', `agenda_ambientes_${fechaActual}.csv`);
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                mostrarToast("Agenda descargada como reporte CSV.", "file-spreadsheet");
+            } catch (err) {
+                console.error("Error al exportar reporte diario:", err);
+                mostrarToast("Ocurrió un error al generar el CSV.", "alert-triangle");
             }
         };
 
-        // Modales de Configuración de Base de Datos
+        // Imprimir la grilla del día en un formato de reporte limpio
+        window.imprimirAgenda = function() {
+            window.print();
+        };
+
+        // Exportar copia de seguridad completa (JSON)
+        window.exportarBackupJSON = function() {
+            try {
+                const datosStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(reservas, null, 2));
+                const descargarAncla = document.createElement('a');
+                descargarAncla.setAttribute("href", datosStr);
+                descargarAncla.setAttribute("download", `respaldo_completo_reservas_${new Date().toISOString().split('T')[0]}.json`);
+                document.body.appendChild(descargarAncla);
+                descargarAncla.click();
+                descargarAncla.remove();
+                mostrarToast("Copia de seguridad completa descargada.", "download");
+            } catch (err) {
+                mostrarToast("Error al exportar backup JSON.", "alert-triangle");
+            }
+        };
+
+        // Importar datos desde un archivo JSON externo
+        window.importarDatos = function(evento) {
+            const archivo = evento.target.files[0];
+            if (!archivo) return;
+
+            const lector = new FileReader();
+            lector.onload = async function(e) {
+                try {
+                    const datosImportados = JSON.parse(e.target.result);
+                    if (typeof datosImportados === 'object') {
+                        // Reemplazar localmente
+                        reservas = datosImportados;
+                        guardarEnAlmacenamiento();
+                        
+                        // Si está conectado, sincronizar cada día importado (Especialmente el activo)
+                        if (isUsingCloud && reservas[fechaActual]) {
+                            const appId = typeof __app_id !== 'undefined' ? __app_id : (localStorage.getItem('custom_firebase_config') ? 'custom-user-app' : 'default-app-id');
+                            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'reservas_por_fecha', fechaActual);
+                            await setDoc(docRef, reservas[fechaActual]);
+                        }
+                        
+                        renderizarTabla();
+                        mostrarToast("¡Reservas restauradas con éxito!", "upload-cloud");
+                    } else {
+                        mostrarToast("El formato del archivo es inválido.", "alert-octagon");
+                    }
+                } catch (err) {
+                    mostrarToast("Error al leer el archivo seleccionado.", "alert-octagon");
+                }
+            };
+            lector.readAsText(archivo);
+        };
+
+        // Menú desplegable de exportar
+        window.toggleDropdown = function() {
+            const dropdown = document.getElementById('opcionesExportar');
+            dropdown.classList.toggle('hidden');
+        };
+
+        // Cerrar dropdown si se hace clic afuera
+        document.addEventListener('click', function(event) {
+            const dropdownContainer = document.getElementById('dropdownExportar');
+            const dropdownMenu = document.getElementById('opcionesExportar');
+            if (dropdownContainer && !dropdownContainer.contains(event.target)) {
+                if (dropdownMenu) dropdownMenu.classList.add('hidden');
+            }
+        });
+
+        // Configuración manual de Firestore para uso externo
         window.abrirModalDB = function() {
             const modal = document.getElementById('modalDB');
             modal.classList.add('modal-active');
@@ -674,7 +801,7 @@
         window.guardarConfigDB = function() {
             const configText = document.getElementById('dbConfigText').value.trim();
             if (!configText) {
-                mostrarToast("Introduce un objeto JSON válido.", "alert-triangle");
+                mostrarToast("Introduce credenciales válidas en formato JSON.", "alert-triangle");
                 return;
             }
 
@@ -682,30 +809,29 @@
                 const parsed = JSON.parse(configText);
                 if (parsed.apiKey && parsed.projectId) {
                     localStorage.setItem('custom_firebase_config', JSON.stringify(parsed));
-                    mostrarToast("Configuración de Base de Datos guardada. Reconectando...", "check");
+                    mostrarToast("Base de datos configurada. Recargando página...", "check");
                     cerrarModalDB();
-                    // Reconectar con las nuevas credenciales
                     setTimeout(() => {
                         window.location.reload();
                     }, 1000);
                 } else {
-                    mostrarToast("El JSON no parece contener credenciales válidas de Firebase.", "alert-circle");
+                    mostrarToast("El objeto no contiene credenciales de Firebase válidas.", "alert-circle");
                 }
             } catch(e) {
-                mostrarToast("Error: El texto no es un JSON válido.", "alert-circle");
+                mostrarToast("Error: El texto no es un JSON correcto.", "alert-circle");
             }
         };
 
         window.limpiarConfigDB = function() {
             localStorage.removeItem('custom_firebase_config');
-            mostrarToast("Base de Datos desconectada. Recargando modo local...", "trash-2");
+            mostrarToast("Regresando a base de datos por defecto. Recargando...", "trash-2");
             cerrarModalDB();
             setTimeout(() => {
                 window.location.reload();
             }, 1000);
         };
 
-        // Auxiliares de Almacenamiento Local (Backup offline)
+        // Almacenamiento local (LocalStorage) como respaldo
         function guardarEnAlmacenamiento() {
             localStorage.setItem('reservas_ambientes_v2', JSON.stringify(reservas));
         }
@@ -721,90 +847,71 @@
             }
         }
 
-        // Exportar datos a archivo JSON
-        window.exportarDatos = function() {
-            const datosStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(reservas, null, 2));
-            const descargarAncla = document.createElement('a');
-            descargarAncla.setAttribute("href", datosStr);
-            descargarAncla.setAttribute("download", `respaldo_reservas_${new Date().toISOString().split('T')[0]}.json`);
-            document.body.appendChild(descargarAncla);
-            descargarAncla.click();
-            descargarAncla.remove();
-            mostrarToast("Archivo de respaldo descargado.", "download");
-        };
-
-        // Importar datos desde archivo JSON externo
-        window.importarDatos = function(evento) {
-            const archivo = evento.target.files[0];
-            if (!archivo) return;
-
-            const lector = new FileReader();
-            lector.onload = async function(e) {
-                try {
-                    const datosImportados = JSON.parse(e.target.result);
-                    if (typeof datosImportados === 'object') {
-                        // Reemplazar localmente
-                        reservas = datosImportados;
-                        guardarEnAlmacenamiento();
-                        
-                        // Si está conectado a la nube, sincronizar el día actual
-                        await subirCambiosANube();
-                        
-                        renderizarTabla();
-                        mostrarToast("¡Reservas importadas exitosamente!", "upload-cloud");
-                    } else {
-                        mostrarToast("El formato del archivo no es correcto.", "alert-octagon");
-                    }
-                } catch (err) {
-                    mostrarToast("Error al leer el archivo seleccionado.", "alert-octagon");
-                }
-            };
-            lector.readAsText(archivo);
-        };
-
-        // Manejadores de Estado UI
+        // Controladores visuales de estados
         function actualizarEstadoConexion(texto, colorClass) {
             const dot = document.getElementById('statusDot');
             const txt = document.getElementById('statusText');
-            
-            dot.className = `w-2.5 h-2.5 rounded-full bg-${colorClass}`;
-            if (colorClass === 'yellow-400') {
-                dot.classList.add('animate-pulse');
-            } else {
-                dot.classList.remove('animate-pulse');
+            if (dot && txt) {
+                dot.className = `w-2.5 h-2.5 rounded-full bg-${colorClass}`;
+                if (colorClass === 'yellow-400') {
+                    dot.classList.add('animate-pulse');
+                } else {
+                    dot.classList.remove('animate-pulse');
+                }
+                txt.textContent = texto;
             }
-            txt.textContent = texto;
         }
 
         function mostrarCargando(visible) {
             const overlay = document.getElementById('loadingOverlay');
-            if (visible) {
-                overlay.classList.remove('hidden');
-                overlay.classList.add('opacity-100');
-            } else {
-                overlay.classList.add('hidden');
-                overlay.classList.remove('opacity-100');
+            if (overlay) {
+                if (visible) {
+                    overlay.classList.remove('hidden');
+                    overlay.classList.add('opacity-100');
+                } else {
+                    overlay.classList.add('hidden');
+                    overlay.classList.remove('opacity-100');
+                }
             }
         }
 
-        // Sistema de notificaciones
+        // Notificaciones globales (Toast)
         window.mostrarToast = function(mensaje, iconName = 'info') {
             const toast = document.getElementById('toast');
             const toastMsg = document.getElementById('toastMessage');
             const toastIcon = document.getElementById('toastIcon');
 
-            toastMsg.textContent = mensaje;
-            toastIcon.innerHTML = `<i data-lucide="${iconName}" class="w-5 h-5 text-indigo-400"></i>`;
-            lucide.createIcons();
+            if (toast && toastMsg && toastIcon) {
+                toastMsg.textContent = mensaje;
+                toastIcon.innerHTML = `<i data-lucide="${iconName}" class="w-5 h-5 text-indigo-400"></i>`;
+                lucide.createIcons();
 
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            toast.classList.add('translate-y-0', 'opacity-100');
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                toast.classList.add('translate-y-0', 'opacity-100');
 
-            setTimeout(() => {
-                toast.classList.remove('translate-y-0', 'opacity-100');
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3500);
+                setTimeout(() => {
+                    toast.classList.remove('translate-y-0', 'opacity-100');
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 3500);
+            }
         };
     </script>
+
+    <!-- ESTILOS EXCLUSIVOS PARA IMPRESIÓN LIMPIA DE REPORTES -->
+    <style>
+        @media print {
+            body { background: white; color: black; font-size: 11px; }
+            header, footer, label, select, input, button, .print\:hidden, #toast, .col-hora-print {
+                display: none !important;
+            }
+            main { padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
+            .bg-white { box-shadow: none !important; border: none !important; }
+            table { width: 100% !important; border-collapse: collapse !important; table-layout: fixed !important; }
+            th, td { border: 1px solid #cbd5e1 !important; padding: 6px !important; text-align: center !important; font-size: 10px !important; color: black !important; background: transparent !important; }
+            th { font-weight: bold !important; background-color: #f1f5f9 !important; }
+            /* Mostrar hora de forma simple sin la barra fija sticky */
+            tr td:first-child { font-weight: bold; }
+        }
+    </style>
 </body>
 </html>
