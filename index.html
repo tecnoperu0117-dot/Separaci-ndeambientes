@@ -47,7 +47,7 @@
                     <span id="statusText">Conectando...</span>
                 </div>
                 
-                <!-- Menú desplegable para Exportar -->
+                <!-- Menú de Exportar -->
                 <div class="relative inline-block text-left" id="dropdownExportar">
                     <button onclick="toggleDropdown()" class="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md text-sm font-medium transition shadow-sm text-white" title="Exportar información">
                         <i data-lucide="download" class="w-4 h-4"></i> Exportar <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
@@ -328,7 +328,7 @@
         const sandboxToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         const sandboxAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        // Definiciones de horas y ambientes (idénticos a la foto original)
+        // Definiciones de horas y ambientes (idénticos a la foto original image_301ca2.png)
         const horas = [
             "10:00", "11:00", "12:00", "13:00", "14:00", "15:00",
             "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00"
@@ -362,7 +362,6 @@
             establecerFechaHoy();
         });
 
-        // Configuración y arranque de la base de datos
         async function inicializarBaseDeDatos() {
             actualizarEstadoConexion("Conectando con la nube...", "yellow-400");
             
@@ -469,7 +468,6 @@
 
                     // Si el estado de la reserva cambió (se agregó, eliminó o editó el nombre)
                     if (JSON.stringify(anterior) !== JSON.stringify(nuevo)) {
-                        // Evitamos animar si el cambio lo hizo este mismo usuario para no distraerlo
                         celdasAnimar.add(clave);
                     }
                 });
@@ -478,33 +476,45 @@
 
         // Sincroniza de manera precisa utilizando campos individuales (Evita sobrescribir reservas ajenas)
         async function guardarRegistroNube(claveCelda, datosReserva) {
+            // --- CORRECCIÓN CLAVE: UI OPTIMISTA ---
+            // Aseguramos que la reserva se guarde inmediatamente en el objeto de memoria local de Javascript
+            if (!reservas[fechaActual]) {
+                reservas[fechaActual] = {};
+            }
+
+            if (datosReserva) {
+                reservas[fechaActual][claveCelda] = datosReserva;
+            } else {
+                delete reservas[fechaActual][claveCelda];
+                if (Object.keys(reservas[fechaActual]).length === 0) {
+                    delete reservas[fechaActual];
+                }
+            }
+
+            // Guardamos localmente de inmediato para que nunca se pierda
+            guardarEnAlmacenamiento();
+            
+            // Renderizamos la tabla inmediatamente en pantalla (no esperamos a que la nube responda)
+            renderizarTabla();
+
+            // Si no estamos conectados en la nube o no hay sesión de Firebase, regresamos de inmediato
             if (!isUsingCloud || !db || !currentUser) {
-                guardarEnAlmacenamiento();
-                renderizarTabla();
                 return;
             }
 
+            // Si estamos conectados en línea, procedemos a sincronizar asincrónicamente con Firestore
             try {
                 const appId = typeof __app_id !== 'undefined' ? __app_id : (localStorage.getItem('custom_firebase_config') ? 'custom-user-app' : 'default-app-id');
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'reservas_por_fecha', fechaActual);
                 
-                // Actualizar de forma combinada únicamente la celda que se editó
+                // Actualizar únicamente la celda modificada para evitar colisiones
                 const payload = {};
                 payload[claveCelda] = datosReserva ? datosReserva : deleteField();
 
                 await setDoc(docRef, payload, { merge: true });
-                guardarEnAlmacenamiento();
             } catch (error) {
                 console.error("Error al enviar registro a la nube:", error);
                 mostrarToast("No se pudo sincronizar en línea. Guardado localmente.", "wifi-off");
-                // Respaldo de seguridad local
-                if (!reservas[fechaActual]) reservas[fechaActual] = {};
-                if (datosReserva) {
-                    reservas[fechaActual][claveCelda] = datosReserva;
-                } else {
-                    delete reservas[fechaActual][claveCelda];
-                }
-                guardarEnAlmacenamiento();
                 renderizarTabla();
             }
         }
@@ -580,7 +590,6 @@
                     // Aplicar animación de actualización en vivo si se detectó cambio colaborativo
                     if (celdasAnimar.has(claveCelda)) {
                         celda.classList.add('live-update-animation');
-                        // Retirar clase de animación después de su ejecución para evitar que se repita
                         setTimeout(() => {
                             celda.classList.remove('live-update-animation');
                         }, 2100);
@@ -679,7 +688,7 @@
             const claveCelda = `${celdaActiva.hora}_${celdaActiva.ambiente}`;
             const datosReserva = { nombre, actividad, tipo };
 
-            // Ejecutar guardado en la nube
+            // Ejecutar guardado (local + nube optimista)
             await guardarRegistroNube(claveCelda, datosReserva);
             
             cerrarModal();
@@ -720,7 +729,7 @@
             if (passwordInput === "IACYM2000") {
                 const claveCelda = `${celdaActiva.hora}_${celdaActiva.ambiente}`;
                 
-                // Enviar borrado a la nube (pasa null como datos de reserva)
+                // Enviar borrado de forma segura
                 await guardarRegistroNube(claveCelda, null);
                 
                 cerrarModalPassword();
@@ -977,7 +986,6 @@
             table { width: 100% !important; border-collapse: collapse !important; table-layout: fixed !important; }
             th, td { border: 1px solid #cbd5e1 !important; padding: 6px !important; text-align: center !important; font-size: 10px !important; color: black !important; background: transparent !important; }
             th { font-weight: bold !important; background-color: #f1f5f9 !important; }
-            /* Mostrar hora de forma simple sin la barra fija sticky */
             tr td:first-child { font-weight: bold; }
         }
     </style>
