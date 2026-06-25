@@ -279,6 +279,38 @@
         </div>
     </div>
 
+    <!-- MODAL DE CONFIRMACIÓN DE CONTRASEÑA PARA ELIMINAR -->
+    <div id="modalPassword" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden justify-center items-center p-4 transition-opacity duration-300">
+        <div class="bg-white rounded-xl w-full max-w-sm overflow-hidden shadow-2xl border border-slate-200 transform scale-95 transition-transform duration-300 flex flex-col">
+            <div class="bg-red-600 text-white p-4 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="shield-alert" class="w-5 h-5 animate-pulse"></i>
+                    <h3 class="font-bold text-lg">Confirmar Acción</h3>
+                </div>
+                <button onclick="cerrarModalPassword()" class="text-white/80 hover:text-white transition">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="p-5 flex flex-col gap-4">
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    Para liberar este ambiente, por favor ingresa la contraseña de autorización requerida por el administrador.
+                </p>
+                <div>
+                    <label for="txtDeletePassword" class="block text-xs font-bold text-slate-700 uppercase mb-1">Contraseña de Seguridad</label>
+                    <input type="password" id="txtDeletePassword" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-red-500 focus:outline-none text-slate-700 font-medium" placeholder="••••••••" required>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-5 py-4 flex justify-end gap-2 border-t border-slate-100">
+                <button onclick="cerrarModalPassword()" class="px-4 py-2 border border-slate-300 hover:bg-slate-100 rounded-lg text-sm font-semibold text-slate-700 transition">
+                    Cancelar
+                </button>
+                <button onclick="confirmarEliminarReserva()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg text-sm shadow-sm transition">
+                    Liberar Turno
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- NOTIFICACIÓN TEMPORAL (TOAST) -->
     <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 translate-y-20 opacity-0 transition-all duration-300 z-50">
         <span id="toastIcon" class="text-indigo-400"></span>
@@ -655,14 +687,50 @@
         };
 
         // Eliminar reserva de la grilla
-        window.eliminarReserva = async function() {
-            const claveCelda = `${celdaActiva.hora}_${celdaActiva.ambiente}`;
+        window.eliminarReserva = function() {
+            abrirModalPassword();
+        };
+
+        // Funciones de control del modal de seguridad para eliminación
+        window.abrirModalPassword = function() {
+            document.getElementById('txtDeletePassword').value = "";
+            const modal = document.getElementById('modalPassword');
+            modal.classList.add('modal-active');
+            document.body.classList.add('modal-open');
+            setTimeout(() => {
+                modal.firstElementChild.classList.remove('scale-95');
+                modal.firstElementChild.classList.add('scale-100');
+                document.getElementById('txtDeletePassword').focus();
+            }, 10);
+        };
+
+        window.cerrarModalPassword = function() {
+            const modal = document.getElementById('modalPassword');
+            modal.firstElementChild.classList.remove('scale-100');
+            modal.firstElementChild.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.remove('modal-active');
+                document.body.classList.remove('modal-open');
+            }, 150);
+        };
+
+        window.confirmarEliminarReserva = async function() {
+            const passwordInput = document.getElementById('txtDeletePassword').value.trim();
             
-            // Enviar borrado a la nube (pasa null como datos de reserva)
-            await guardarRegistroNube(claveCelda, null);
-            
-            cerrarModal();
-            mostrarToast("Espacio liberado y actualizado en vivo.", "trash-2");
+            if (passwordInput === "IACYM2000") {
+                const claveCelda = `${celdaActiva.hora}_${celdaActiva.ambiente}`;
+                
+                // Enviar borrado a la nube (pasa null como datos de reserva)
+                await guardarRegistroNube(claveCelda, null);
+                
+                cerrarModalPassword();
+                cerrarModal(); // Cerrar también el modal principal de edición
+                mostrarToast("Espacio liberado y actualizado en vivo.", "trash-2");
+            } else {
+                mostrarToast("Contraseña incorrecta. Inténtalo de nuevo.", "shield-off");
+                document.getElementById('txtDeletePassword').focus();
+                document.getElementById('txtDeletePassword').select();
+            }
         };
 
         // Exportación de Agenda Diaria a CSV compatible con Microsoft Excel
