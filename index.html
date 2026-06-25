@@ -3,19 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reserva de Ambientes</title>
-    <!-- Tailwind CSS para un diseño moderno y responsivo -->
+    <title>Reserva de Ambientes (Nube y Local)</title>
+    <!-- Tailwind CSS para diseño moderno -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons para iconos limpios -->
+    <!-- Lucide Icons para iconos modernos -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Estilos personalizados para asegurar el correcto renderizado y transiciones */
-        .modal-active {
-            display: flex !important;
+        .modal-active { display: flex !important; }
+        body.modal-open { overflow: hidden; }
+        /* Animación de carga */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid #ffffff;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
         }
-        /* Bloquear desplazamiento al abrir modal */
-        body.modal-open {
-            overflow: hidden;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -26,19 +33,29 @@
         <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
                 <div class="p-2 bg-indigo-600 rounded-lg">
-                    <i data-lucide="calendar-check" class="w-8 h-8 text-white"></i>
+                    <i data-lucide="cloud-lightning" class="w-8 h-8 text-white"></i>
                 </div>
                 <div>
                     <h1 class="text-2xl font-bold tracking-tight">Separación de Ambientes</h1>
-                    <p class="text-xs text-indigo-200">Gestión interactiva de reservas de espacios</p>
+                    <p class="text-xs text-indigo-200">Sistema con almacenamiento en tiempo real y persistencia</p>
                 </div>
             </div>
-            <!-- Acciones rápidas -->
-            <div class="flex items-center gap-2">
-                <button onclick="exportarDatos()" class="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md text-sm font-medium transition shadow-sm" title="Exportar todas las reservas">
-                    <i data-lucide="download" class="w-4 h-4"></i> Exportar
+            
+            <!-- Acciones rápidas y Configuración -->
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Indicador de estado de conexión -->
+                <div id="statusConnection" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-800 text-xs text-indigo-200 font-medium border border-indigo-600">
+                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse" id="statusDot"></span>
+                    <span id="statusText">Iniciando...</span>
+                </div>
+                
+                <button onclick="abrirModalDB()" class="p-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition shadow-sm text-white" title="Configurar Base de Datos Personal">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
                 </button>
-                <button onclick="document.getElementById('importFile').click()" class="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md text-sm font-medium transition shadow-sm" title="Importar reservas desde un archivo">
+                <button onclick="exportarDatos()" class="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md text-sm font-medium transition shadow-sm text-white" title="Exportar todas las reservas">
+                    <i data-lucide="download" class="w-4 h-4"></i> Exportar Backup
+                </button>
+                <button onclick="document.getElementById('importFile').click()" class="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md text-sm font-medium transition shadow-sm text-white" title="Importar reservas desde un archivo">
                     <i data-lucide="upload" class="w-4 h-4"></i> Importar
                 </button>
                 <input type="file" id="importFile" class="hidden" accept=".json" onchange="importarDatos(event)">
@@ -98,17 +115,23 @@
             </span>
         </div>
 
-        <!-- Contenedor de la Tabla Principal (Scroll horizontal fluido para móviles) -->
-        <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+        <!-- Tabla Principal -->
+        <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden relative">
+            <!-- Overlay de carga -->
+            <div id="loadingOverlay" class="absolute inset-0 bg-white/70 backdrop-blur-xs flex justify-center items-center z-20 transition-opacity duration-200 hidden">
+                <div class="flex flex-col items-center gap-2">
+                    <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span class="text-xs font-semibold text-indigo-700">Actualizando datos de la nube...</span>
+                </div>
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[800px] border-collapse table-fixed text-left">
                     <thead>
                         <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
-                            <!-- Columna de Horas -->
                             <th class="w-24 p-4 font-bold text-center border-r border-slate-200 bg-slate-100 sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                                 Hora
                             </th>
-                            <!-- Columnas de Ambientes -->
                             <th class="p-4 font-bold text-center border-r border-slate-200">Templo</th>
                             <th class="p-4 font-bold text-center border-r border-slate-200">2do piso</th>
                             <th class="p-4 font-bold text-center border-r border-slate-200">4to piso</th>
@@ -117,7 +140,7 @@
                         </tr>
                     </thead>
                     <tbody id="cuerpoTabla" class="divide-y divide-slate-100 text-sm">
-                        <!-- Las filas se generarán dinámicamente con JavaScript -->
+                        <!-- Generado por JS -->
                     </tbody>
                 </table>
             </div>
@@ -125,10 +148,10 @@
 
     </main>
 
-    <!-- Footer de Información -->
+    <!-- Footer -->
     <footer class="bg-slate-800 text-slate-400 py-6 mt-12 border-t border-slate-700">
         <div class="max-w-7xl mx-auto px-4 text-center text-xs flex flex-col sm:flex-row justify-between items-center gap-3">
-            <p>&copy; 2026 Separación de Ambientes. Todos los datos se guardan de forma local en este dispositivo.</p>
+            <p>&copy; 2026 Separación de Ambientes. Los registros se graban automáticamente en tiempo real.</p>
             <p class="flex items-center gap-1">
                 Diseñado con <i data-lucide="heart" class="w-3.5 h-3.5 text-red-500 fill-red-500"></i> para uso continuo.
             </p>
@@ -138,7 +161,6 @@
     <!-- MODAL DE RESERVA / EDICIÓN -->
     <div id="modalReserva" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden justify-center items-center p-4 transition-opacity duration-300">
         <div class="bg-white rounded-xl w-full max-w-md overflow-hidden shadow-2xl border border-slate-200 transform scale-95 transition-transform duration-300 flex flex-col">
-            <!-- Cabecera del Modal -->
             <div class="bg-indigo-700 text-white p-4 flex justify-between items-center">
                 <div class="flex items-center gap-2">
                     <i data-lucide="edit-3" class="w-5 h-5"></i>
@@ -149,9 +171,7 @@
                 </button>
             </div>
             
-            <!-- Contenido del Formulario -->
             <div class="p-5 flex flex-col gap-4">
-                <!-- Detalles del Espacio Elegido -->
                 <div class="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-slate-600">
                     <div>
                         <span class="block text-[10px] uppercase font-bold tracking-wider text-slate-400">Ambiente</span>
@@ -163,15 +183,14 @@
                     </div>
                 </div>
 
-                <!-- Campos de Entrada -->
                 <div>
                     <label for="txtNombre" class="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre del Responsable / Grupo</label>
-                    <input type="text" id="txtNombre" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-700" placeholder="Ej. Juan Pérez / Ministerio Juvenil" required>
+                    <input type="text" id="txtNombre" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-700" placeholder="Ej. Juan Pérez / Ministerio" required>
                 </div>
 
                 <div>
                     <label for="txtActividad" class="block text-xs font-bold text-slate-700 uppercase mb-1">Actividad / Motivo</label>
-                    <textarea id="txtActividad" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-700 text-sm" placeholder="Ej. Ensayo de coro, reunión de planificación..."></textarea>
+                    <textarea id="txtActividad" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-700 text-sm" placeholder="Ej. Reunión general, ensayo, etc."></textarea>
                 </div>
 
                 <div>
@@ -183,7 +202,6 @@
                 </div>
             </div>
 
-            <!-- Botones de Acción -->
             <div class="bg-slate-50 px-5 py-4 flex flex-col sm:flex-row justify-between items-center gap-2 border-t border-slate-100">
                 <button id="btnEliminar" onclick="eliminarReserva()" class="w-full sm:w-auto px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-lg text-sm transition flex items-center justify-center gap-1">
                     <i data-lucide="trash-2" class="w-4 h-4"></i> Liberar Espacio
@@ -200,21 +218,80 @@
         </div>
     </div>
 
+    <!-- MODAL CONFIGURACIÓN BASE DE DATOS PERSONAL -->
+    <div id="modalDB" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden justify-center items-center p-4 transition-opacity duration-300">
+        <div class="bg-white rounded-xl w-full max-w-lg overflow-hidden shadow-2xl border border-slate-200 transform scale-95 transition-transform duration-300 flex flex-col">
+            <div class="bg-slate-800 text-white p-4 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="database" class="w-5 h-5"></i>
+                    <h3 class="font-bold text-lg">Base de Datos Personal (Firebase)</h3>
+                </div>
+                <button onclick="cerrarModalDB()" class="text-white/80 hover:text-white transition">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <div class="p-5 flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    Si abres esta página en tu computadora (fuera de esta plataforma), puedes conectar tu propio proyecto gratuito de Firebase Firestore para seguir teniendo reservas compartidas en línea y tiempo real de manera independiente.
+                </p>
+                <hr class="border-slate-200">
+                
+                <div>
+                    <label for="dbConfigText" class="block text-xs font-bold text-slate-700 uppercase mb-1">Configuración del Proyecto (JSON)</label>
+                    <textarea id="dbConfigText" rows="6" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm font-mono text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-700" placeholder='{&#10;  "apiKey": "...",&#10;  "authDomain": "...",&#10;  "projectId": "...",&#10;  "storageBucket": "...",&#10;  "messagingSenderId": "...",&#10;  "appId": "..."&#10;}'></textarea>
+                </div>
+                
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-slate-600 flex flex-col gap-1.5">
+                    <span class="font-bold text-slate-700 block">¿Cómo obtener estos datos?</span>
+                    <ol class="list-decimal list-inside space-y-1 text-slate-500 text-[11px]">
+                        <li>Entra a <a href="https://console.firebase.google.com/" target="_blank" class="text-indigo-600 underline font-semibold">Firebase Console</a> y crea un proyecto gratuito.</li>
+                        <li>Crea una base de datos "Cloud Firestore" en modo de prueba.</li>
+                        <li>Añade una aplicación Web y copia el objeto <code class="bg-slate-100 px-1 rounded font-mono text-red-600">firebaseConfig</code> que te proporcionen.</li>
+                        <li>Pégalo aquí y presiona "Guardar y Conectar".</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 px-5 py-4 flex justify-between items-center border-t border-slate-100">
+                <button onclick="limpiarConfigDB()" class="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold rounded-lg text-xs transition">
+                    Desconectar Nube Personal
+                </button>
+                <div class="flex gap-2">
+                    <button onclick="cerrarModalDB()" class="px-4 py-2 border border-slate-300 hover:bg-slate-100 rounded-lg text-sm font-semibold text-slate-700 transition">
+                        Cerrar
+                    </button>
+                    <button onclick="guardarConfigDB()" class="px-4 py-2 bg-indigo-700 hover:bg-indigo-800 text-white font-semibold rounded-lg text-sm shadow-sm transition">
+                        Guardar y Conectar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- NOTIFICACIÓN TEMPORAL (TOAST) -->
     <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 translate-y-20 opacity-0 transition-all duration-300 z-50">
         <span id="toastIcon" class="text-indigo-400"></span>
         <p id="toastMessage" class="text-sm font-medium"></p>
     </div>
 
-    <!-- SCRIPT DE LA APLICACIÓN -->
-    <script>
-        // Configuración de las horas (según la imagen de 10:00 a 22:00)
+    <!-- SCRIPT PRINCIPAL USANDO MÓDULOS DE FIREBASE -->
+    <script type="module">
+        // Importaciones de módulos CDN de Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Parámetros proporcionados por el entorno sandbox (si existen)
+        const sandboxConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const sandboxToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const sandboxAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // Configuración de las horas y ambientes
         const horas = [
             "10:00", "11:00", "12:00", "13:00", "14:00", "15:00",
             "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00"
         ];
-
-        // Definición de las columnas / ambientes
         const ambientes = [
             "Templo",
             "2do piso",
@@ -225,57 +302,186 @@
 
         // Estado global de la aplicación
         let fechaActual = "";
-        let reservas = {}; // Formato estructurado: { "YYYY-MM-DD": { "Hora_Ambiente": { nombre, actividad, tipo } } }
+        let reservas = {}; // Datos locales activos
         let celdaActiva = { hora: "", ambiente: "" };
+        let activeUnsubscribe = null; // Para limpiar escuchas de Firebase
+        
+        // Firebase global instances
+        let firebaseApp = null;
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        let isUsingCloud = false;
 
-        // Inicialización al cargar la página
-        window.addEventListener('DOMContentLoaded', () => {
-            // Inicializar iconos de Lucide
+        // Al iniciar la página
+        window.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             
-            // Cargar datos de localStorage
+            // 1. Cargar datos locales de LocalStorage por si acaso
             cargarReservasDeAlmacenamiento();
 
-            // Configurar fecha actual de inicio (Hoy)
+            // 2. Intentar Inicializar Conexión Base de Datos
+            await inicializarBaseDeDatos();
+
+            // 3. Configurar fecha actual de inicio (Hoy)
             establecerFechaHoy();
         });
 
-        // Configura el selector de fecha a la fecha de hoy
-        function establecerFechaHoy() {
-            const hoy = new Date();
-            const timezoneOffset = hoy.getTimezoneOffset() * 60000;
-            const fechaLocal = new Date(hoy.getTime() - timezoneOffset);
-            const stringHoy = fechaLocal.toISOString().split('T')[0];
+        // Inicializa Firebase si hay configuración del sandbox o configuración personalizada del usuario
+        async function inicializarBaseDeDatos() {
+            actualizarEstadoConexion("Conectando...", "yellow-400");
             
-            // Restringir el input date para que solo permita fechas de hoy en adelante
-            document.getElementById('fechaSeleccionada').min = stringHoy;
+            let configToUse = null;
+            let tokenToUse = null;
+            let appId = sandboxAppId;
+
+            // Revisamos si el usuario guardó su propia configuración en LocalStorage (para fuera de aquí)
+            const customConfigStr = localStorage.getItem('custom_firebase_config');
             
-            cambiarFecha(stringHoy);
+            if (customConfigStr) {
+                try {
+                    configToUse = JSON.parse(customConfigStr);
+                    appId = 'custom-user-app';
+                    document.getElementById('dbConfigText').value = JSON.stringify(configToUse, null, 2);
+                } catch(e) {
+                    console.error("Configuración personalizada corrupta", e);
+                }
+            } else if (sandboxConfig) {
+                configToUse = sandboxConfig;
+                tokenToUse = sandboxToken;
+            }
+
+            if (configToUse) {
+                try {
+                    // Inicializar Firebase
+                    firebaseApp = initializeApp(configToUse);
+                    auth = getAuth(firebaseApp);
+                    db = getFirestore(firebaseApp);
+
+                    // Regla de Autenticación antes de Consultas
+                    if (tokenToUse) {
+                        await signInWithCustomToken(auth, tokenToUse);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+
+                    onAuthStateChanged(auth, (user) => {
+                        currentUser = user;
+                        if (user) {
+                            isUsingCloud = true;
+                            actualizarEstadoConexion("Sincronizado (Nube)", "emerald-500");
+                            // Recargar la escucha de datos para la fecha seleccionada
+                            escucharFechaEnTiempoReal();
+                        } else {
+                            isUsingCloud = false;
+                            actualizarEstadoConexion("Solo Local (Sin Sesión)", "yellow-400");
+                        }
+                    });
+
+                } catch (error) {
+                    console.error("Error al iniciar base de datos en la nube:", error);
+                    isUsingCloud = false;
+                    actualizarEstadoConexion("Modo Local (Error de Red)", "red-500");
+                }
+            } else {
+                isUsingCloud = false;
+                actualizarEstadoConexion("Guardado Local Activo", "indigo-400");
+            }
         }
 
-        // Cambiar la fecha de visualización
-        function cambiarFecha(nuevaFecha) {
+        // Escucha en tiempo real la fecha actual seleccionada en Firestore
+        function escucharFechaEnTiempoReal() {
+            if (!isUsingCloud || !db || !currentUser) {
+                renderizarTabla();
+                return;
+            }
+
+            // Limpiar suscripción previa si existe
+            if (activeUnsubscribe) {
+                activeUnsubscribe();
+            }
+
+            mostrarCargando(true);
+
+            // Regla 1: Usar la estructura estricta de rutas públicas para compartir registros
+            const appId = typeof __app_id !== 'undefined' ? __app_id : (localStorage.getItem('custom_firebase_config') ? 'custom-user-app' : 'default-app-id');
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'reservas_por_fecha', fechaActual);
+
+            activeUnsubscribe = onSnapshot(docRef, (docSnapshot) => {
+                if (docSnapshot.exists()) {
+                    // Cargar las reservas de este día que vienen de la nube
+                    reservas[fechaActual] = docSnapshot.data();
+                } else {
+                    // Si no existe el registro en la nube para esta fecha, garantizamos un objeto vacío
+                    reservas[fechaActual] = {};
+                }
+                
+                // Actualizar almacenamiento local para respaldo offline
+                guardarEnAlmacenamiento();
+                renderizarTabla();
+                mostrarCargando(false);
+            }, (error) => {
+                console.error("Error al obtener datos en tiempo real:", error);
+                mostrarCargando(false);
+                // Si falla la consulta a la nube, mostramos los datos que teníamos en almacenamiento local
+                renderizarTabla();
+            });
+        }
+
+        // Enviar cambios de la fecha seleccionada a la nube
+        async function subirCambiosANube() {
+            if (!isUsingCloud || !db || !currentUser) {
+                // Si solo está en local, guardar localmente es suficiente
+                guardarEnAlmacenamiento();
+                return;
+            }
+
+            try {
+                const appId = typeof __app_id !== 'undefined' ? __app_id : (localStorage.getItem('custom_firebase_config') ? 'custom-user-app' : 'default-app-id');
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'reservas_por_fecha', fechaActual);
+                
+                // Guardar la estructura completa de este día en Firestore
+                const datosDelDia = reservas[fechaActual] || {};
+                await setDoc(docRef, datosDelDia);
+                guardarEnAlmacenamiento();
+            } catch (error) {
+                console.error("Error guardando datos en la nube:", error);
+                mostrarToast("Error de conexión. Se guardó de forma local temporalmente.", "wifi-off");
+            }
+        }
+
+        // Configurar la fecha actual
+        window.cambiarFecha = function(nuevaFecha) {
             fechaActual = nuevaFecha;
             document.getElementById('fechaSeleccionada').value = nuevaFecha;
             
-            // Formatear fecha para el encabezado amigable
             const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             const fechaObj = new Date(nuevaFecha + 'T00:00:00');
             const fechaFormateada = fechaObj.toLocaleDateString('es-ES', opciones);
             
             document.getElementById('txtFechaActual').textContent = fechaFormateada.charAt(0).toUpperCase() + fechaFormateada.slice(1);
             
-            renderizarTabla();
-        }
+            // Cambiar de fecha dispara escuchar en tiempo real la nueva fecha en Firestore
+            escucharFechaEnTiempoReal();
+        };
 
-        function irDiaAnterior() {
+        window.establecerFechaHoy = function() {
+            const hoy = new Date();
+            const timezoneOffset = hoy.getTimezoneOffset() * 60000;
+            const fechaLocal = new Date(hoy.getTime() - timezoneOffset);
+            const stringHoy = fechaLocal.toISOString().split('T')[0];
+            
+            document.getElementById('fechaSeleccionada').min = stringHoy;
+            cambiarFecha(stringHoy);
+        };
+
+        window.irDiaAnterior = function() {
             const fechaObj = new Date(fechaActual + 'T00:00:00');
             const hoy = new Date();
             hoy.setHours(0,0,0,0);
             
             fechaObj.setDate(fechaObj.getDate() - 1);
             
-            // Evitar ir a fechas pasadas a la de hoy
             if (fechaObj < hoy) {
                 mostrarToast("No es posible programar fechas pasadas.", "alert-circle");
                 return;
@@ -283,16 +489,16 @@
             
             const stringFecha = fechaObj.toISOString().split('T')[0];
             cambiarFecha(stringFecha);
-        }
+        };
 
-        function irDiaSiguiente() {
+        window.irDiaSiguiente = function() {
             const fechaObj = new Date(fechaActual + 'T00:00:00');
             fechaObj.setDate(fechaObj.getDate() + 1);
             const stringFecha = fechaObj.toISOString().split('T')[0];
             cambiarFecha(stringFecha);
-        }
+        };
 
-        // Genera visualmente la tabla de horarios
+        // Renderiza visualmente la tabla de horarios
         function renderizarTabla() {
             const cuerpo = document.getElementById('cuerpoTabla');
             cuerpo.innerHTML = '';
@@ -304,13 +510,11 @@
                 const fila = document.createElement('tr');
                 fila.className = "hover:bg-slate-50/50 transition";
 
-                // Celda de la Hora (Pegajosa en móviles)
                 const celdaHora = document.createElement('td');
                 celdaHora.className = "p-4 font-bold text-center text-slate-600 bg-slate-50 border-r border-slate-200 sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]";
                 celdaHora.textContent = hora;
                 fila.appendChild(celdaHora);
 
-                // Celda para cada ambiente
                 ambientes.forEach(ambiente => {
                     const celda = document.createElement('td');
                     celda.className = "p-3 border-r border-slate-200 text-center relative group min-h-[70px] align-middle transition duration-200 cursor-pointer";
@@ -321,14 +525,12 @@
                     if (reserva) {
                         ocupados++;
                         if (reserva.tipo === 'bloqueado') {
-                            // Estilo bloqueado
                             celda.className += " bg-amber-50 hover:bg-amber-100 text-amber-900 border-l-4 border-l-amber-500";
                             celda.innerHTML = `
                                 <div class="font-bold text-xs truncate max-w-[130px] mx-auto">${reserva.nombre || 'BLOQUEADO'}</div>
                                 <div class="text-[10px] text-amber-700 truncate max-w-[130px] mx-auto">${reserva.actividad || 'No disponible'}</div>
                             `;
                         } else {
-                            // Estilo reservado estándar
                             celda.className += " bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border-l-4 border-l-indigo-500";
                             celda.innerHTML = `
                                 <div class="font-bold text-xs truncate max-w-[130px] mx-auto">${reserva.nombre}</div>
@@ -336,14 +538,12 @@
                             `;
                         }
                     } else {
-                        // Estilo celda vacía / disponible
                         celda.className += " hover:bg-slate-100 text-slate-300";
                         celda.innerHTML = `
                             <span class="opacity-0 group-hover:opacity-100 text-xs font-semibold text-indigo-500 transition-opacity">Reservar</span>
                         `;
                     }
 
-                    // Evento de clic para abrir el formulario
                     celda.onclick = () => abrirModal(hora, ambiente);
                     fila.appendChild(celda);
                 });
@@ -351,16 +551,14 @@
                 cuerpo.appendChild(fila);
             });
 
-            // Actualizar resumen
             const totalCeldas = horas.length * ambientes.length;
             document.getElementById('indicadorOcupacion').textContent = `${ocupados} / ${totalCeldas}`;
         }
 
-        // Operaciones de Modal
-        function abrirModal(hora, ambiente) {
+        // Operaciones de Modal de Reserva
+        window.abrirModal = function(hora, ambiente) {
             celdaActiva = { hora, ambiente };
             
-            // Actualizar etiquetas visuales en el modal
             document.getElementById('lblAmbiente').textContent = ambiente;
             document.getElementById('lblHoraFecha').textContent = `${hora} - ${fechaActual}`;
 
@@ -368,7 +566,6 @@
             const claveCelda = `${hora}_${ambiente}`;
             const reservaExistente = reservasDia[claveCelda];
 
-            // Limpiar o llenar campos según si ya existe una reserva
             if (reservaExistente) {
                 document.getElementById('modalTitulo').textContent = "Editar Separación";
                 document.getElementById('txtNombre').value = reservaExistente.nombre;
@@ -383,7 +580,6 @@
                 document.getElementById('btnEliminar').classList.add('hidden');
             }
 
-            // Mostrar Modal con animación
             const modal = document.getElementById('modalReserva');
             modal.classList.add('modal-active');
             document.body.classList.add('modal-open');
@@ -391,9 +587,9 @@
                 modal.firstElementChild.classList.remove('scale-95');
                 modal.firstElementChild.classList.add('scale-100');
             }, 10);
-        }
+        };
 
-        function cerrarModal() {
+        window.cerrarModal = function() {
             const modal = document.getElementById('modalReserva');
             modal.firstElementChild.classList.remove('scale-100');
             modal.firstElementChild.classList.add('scale-95');
@@ -402,10 +598,10 @@
                 modal.classList.remove('modal-active');
                 document.body.classList.remove('modal-open');
             }, 150);
-        }
+        };
 
-        // Guarda la reserva de forma local
-        function guardarReserva() {
+        // Guarda la reserva de forma local y nube
+        window.guardarReserva = async function() {
             const nombre = document.getElementById('txtNombre').value.trim();
             const actividad = document.getElementById('txtActividad').value.trim();
             const tipo = document.getElementById('selTipo').value;
@@ -416,90 +612,146 @@
                 return;
             }
 
-            // Asegurar que la estructura exista
             if (!reservas[fechaActual]) {
                 reservas[fechaActual] = {};
             }
 
             const claveCelda = `${celdaActiva.hora}_${celdaActiva.ambiente}`;
             
-            // Guardar en el objeto principal
             reservas[fechaActual][claveCelda] = {
                 nombre: nombre,
                 actividad: actividad,
                 tipo: tipo
             };
 
-            guardarEnAlmacenamiento();
+            // Guarda y sincroniza
+            await subirCambiosANube();
             renderizarTabla();
             cerrarModal();
-            mostrarToast("Ambiente reservado exitosamente.", "check-circle");
-        }
+            mostrarToast("Registro grabado exitosamente.", "check-circle");
+        };
 
         // Elimina o libera una celda reservada
-        function eliminarReserva() {
+        window.eliminarReserva = async function() {
             if (!reservas[fechaActual]) return;
 
             const claveCelda = `${celdaActiva.hora}_${celdaActiva.ambiente}`;
             if (reservas[fechaActual][claveCelda]) {
                 delete reservas[fechaActual][claveCelda];
                 
-                // Limpiar el día si no quedan más reservas para no inflar el almacenamiento
                 if (Object.keys(reservas[fechaActual]).length === 0) {
                     delete reservas[fechaActual];
                 }
 
-                guardarEnAlmacenamiento();
+                await subirCambiosANube();
                 renderizarTabla();
                 cerrarModal();
-                mostrarToast("Espacio liberado con éxito.", "trash-2");
+                mostrarToast("Espacio liberado y grabado.", "trash-2");
             }
-        }
+        };
 
-        // Almacenamiento Local (LocalStorage)
+        // Modales de Configuración de Base de Datos
+        window.abrirModalDB = function() {
+            const modal = document.getElementById('modalDB');
+            modal.classList.add('modal-active');
+            document.body.classList.add('modal-open');
+            setTimeout(() => {
+                modal.firstElementChild.classList.remove('scale-95');
+                modal.firstElementChild.classList.add('scale-100');
+            }, 10);
+        };
+
+        window.cerrarModalDB = function() {
+            const modal = document.getElementById('modalDB');
+            modal.firstElementChild.classList.remove('scale-100');
+            modal.firstElementChild.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.remove('modal-active');
+                document.body.classList.remove('modal-open');
+            }, 150);
+        };
+
+        window.guardarConfigDB = function() {
+            const configText = document.getElementById('dbConfigText').value.trim();
+            if (!configText) {
+                mostrarToast("Introduce un objeto JSON válido.", "alert-triangle");
+                return;
+            }
+
+            try {
+                const parsed = JSON.parse(configText);
+                if (parsed.apiKey && parsed.projectId) {
+                    localStorage.setItem('custom_firebase_config', JSON.stringify(parsed));
+                    mostrarToast("Configuración de Base de Datos guardada. Reconectando...", "check");
+                    cerrarModalDB();
+                    // Reconectar con las nuevas credenciales
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    mostrarToast("El JSON no parece contener credenciales válidas de Firebase.", "alert-circle");
+                }
+            } catch(e) {
+                mostrarToast("Error: El texto no es un JSON válido.", "alert-circle");
+            }
+        };
+
+        window.limpiarConfigDB = function() {
+            localStorage.removeItem('custom_firebase_config');
+            mostrarToast("Base de Datos desconectada. Recargando modo local...", "trash-2");
+            cerrarModalDB();
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        };
+
+        // Auxiliares de Almacenamiento Local (Backup offline)
         function guardarEnAlmacenamiento() {
-            localStorage.setItem('reservas_ambientes', JSON.stringify(reservas));
+            localStorage.setItem('reservas_ambientes_v2', JSON.stringify(reservas));
         }
 
         function cargarReservasDeAlmacenamiento() {
-            const guardadas = localStorage.getItem('reservas_ambientes');
+            const guardadas = localStorage.getItem('reservas_ambientes_v2') || localStorage.getItem('reservas_ambientes');
             if (guardadas) {
                 try {
                     reservas = JSON.parse(guardadas);
                 } catch (e) {
-                    console.error("Error cargando reservas desde localStorage", e);
                     reservas = {};
                 }
             }
         }
 
         // Exportar datos a archivo JSON
-        function exportarDatos() {
+        window.exportarDatos = function() {
             const datosStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(reservas, null, 2));
             const descargarAncla = document.createElement('a');
             descargarAncla.setAttribute("href", datosStr);
-            descargarAncla.setAttribute("download", `reservas_ambientes_${new Date().toISOString().split('T')[0]}.json`);
+            descargarAncla.setAttribute("download", `respaldo_reservas_${new Date().toISOString().split('T')[0]}.json`);
             document.body.appendChild(descargarAncla);
             descargarAncla.click();
             descargarAncla.remove();
-            mostrarToast("Respaldando reservas en archivo JSON.", "download");
-        }
+            mostrarToast("Archivo de respaldo descargado.", "download");
+        };
 
         // Importar datos desde archivo JSON externo
-        function importarDatos(evento) {
+        window.importarDatos = function(evento) {
             const archivo = evento.target.files[0];
             if (!archivo) return;
 
             const lector = new FileReader();
-            lector.onload = function(e) {
+            lector.onload = async function(e) {
                 try {
                     const datosImportados = JSON.parse(e.target.result);
-                    // Validación simple
                     if (typeof datosImportados === 'object') {
+                        // Reemplazar localmente
                         reservas = datosImportados;
                         guardarEnAlmacenamiento();
+                        
+                        // Si está conectado a la nube, sincronizar el día actual
+                        await subirCambiosANube();
+                        
                         renderizarTabla();
-                        mostrarToast("¡Reservas importadas de manera exitosa!", "upload-cloud");
+                        mostrarToast("¡Reservas importadas exitosamente!", "upload-cloud");
                     } else {
                         mostrarToast("El formato del archivo no es correcto.", "alert-octagon");
                     }
@@ -508,28 +760,51 @@
                 }
             };
             lector.readAsText(archivo);
+        };
+
+        // Manejadores de Estado UI
+        function actualizarEstadoConexion(texto, colorClass) {
+            const dot = document.getElementById('statusDot');
+            const txt = document.getElementById('statusText');
+            
+            dot.className = `w-2.5 h-2.5 rounded-full bg-${colorClass}`;
+            if (colorClass === 'yellow-400') {
+                dot.classList.add('animate-pulse');
+            } else {
+                dot.classList.remove('animate-pulse');
+            }
+            txt.textContent = texto;
         }
 
-        // Componente Toast para avisos elegantes
-        function mostrarToast(mensaje, iconName = 'info') {
+        function mostrarCargando(visible) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (visible) {
+                overlay.classList.remove('hidden');
+                overlay.classList.add('opacity-100');
+            } else {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('opacity-100');
+            }
+        }
+
+        // Sistema de notificaciones
+        window.mostrarToast = function(mensaje, iconName = 'info') {
             const toast = document.getElementById('toast');
             const toastMsg = document.getElementById('toastMessage');
             const toastIcon = document.getElementById('toastIcon');
 
             toastMsg.textContent = mensaje;
-            toastIcon.innerHTML = `<i data-lucide="${iconName}" class="w-5 h-5"></i>`;
-            lucide.createIcons({ attrs: { class: "w-5 h-5 text-indigo-400" } });
+            toastIcon.innerHTML = `<i data-lucide="${iconName}" class="w-5 h-5 text-indigo-400"></i>`;
+            lucide.createIcons();
 
-            // Mostrar
             toast.classList.remove('translate-y-20', 'opacity-0');
             toast.classList.add('translate-y-0', 'opacity-100');
 
-            // Ocultar tras 3.5 segundos
             setTimeout(() => {
                 toast.classList.remove('translate-y-0', 'opacity-100');
                 toast.classList.add('translate-y-20', 'opacity-0');
             }, 3500);
-        }
+        };
     </script>
 </body>
 </html>
