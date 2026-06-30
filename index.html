@@ -3,991 +3,430 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reserva de Ambientes (Tiempo Real & Exportación)</title>
-    <!-- Tailwind CSS para diseño moderno y responsivo -->
+    <title>Estadísticas de Cursos y Asistencia</title>
+    <!-- Tailwind CSS para el diseño premium -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons para una interfaz de usuario visualmente rica -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js para los gráficos dinámicos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .modal-active { display: flex !important; }
-        body.modal-open { overflow: hidden; }
-        
-        /* Animación para resaltar celdas actualizadas por otros usuarios en tiempo real */
-        @keyframes pulseHighlight {
-            0% { background-color: rgba(16, 185, 129, 0.2); border-color: #10b981; transform: scale(1.02); }
-            50% { background-color: rgba(16, 185, 129, 0.4); border-color: #059669; transform: scale(1.04); }
-            100% { background-color: transparent; border-color: transparent; transform: scale(1); }
-        }
-        .live-update-animation {
-            animation: pulseHighlight 2s ease-out;
-            z-index: 10;
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans transition-all duration-300">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-    <!-- Encabezado / Navbar -->
-    <header class="bg-indigo-700 text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-3">
-                <div class="p-2 bg-indigo-600 rounded-lg">
-                    <i data-lucide="cloud-lightning" class="w-8 h-8 text-white animate-bounce"></i>
-                </div>
-                <div>
-                    <h1 class="text-2xl font-bold tracking-tight">Separación de Ambientes</h1>
-                    <p class="text-xs text-indigo-200">Sincronización en vivo y herramientas de exportación activa</p>
-                </div>
+    <!-- Header / Barra Superior -->
+    <header class="bg-gradient-to-r from-violet-800 to-indigo-900 text-white py-6 px-4 md:px-8 shadow-md">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Control de Alumnos y Asistencia</h1>
+                <p class="text-violet-200 text-sm mt-1">Reportes estadísticos y consulta rápida de matriculados (Actualizado)</p>
             </div>
-            
-            <!-- Acciones rápidas, Exportaciones y Configuración -->
-            <div class="flex flex-wrap items-center gap-2">
-                <!-- Indicador de estado de conexión en tiempo real -->
-                <div id="statusConnection" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-800 text-xs text-indigo-100 font-medium border border-indigo-600">
-                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse" id="statusDot"></span>
-                    <span id="statusText">Conectando...</span>
-                </div>
-                
-                <!-- Menú de Exportar -->
-                <div class="relative inline-block text-left" id="dropdownExportar">
-                    <button onclick="toggleDropdown()" class="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md text-sm font-medium transition shadow-sm text-white" title="Exportar información">
-                        <i data-lucide="download" class="w-4 h-4"></i> Exportar <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
-                    </button>
-                    <div id="opcionesExportar" class="hidden absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black/5 focus:outline-none z-30">
-                        <div class="py-1" role="none">
-                            <button onclick="exportarCSVReporte()" class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 w-full text-left font-medium">
-                                <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i> Descargar Agenda (CSV)
-                            </button>
-                            <button onclick="imprimirAgenda()" class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 w-full text-left font-medium">
-                                <i data-lucide="printer" class="w-4 h-4 text-indigo-600"></i> Imprimir Reporte Diario
-                            </button>
-                            <hr class="border-slate-100">
-                            <button onclick="exportarBackupJSON()" class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 w-full text-left font-medium">
-                                <i data-lucide="database-backup" class="w-4 h-4 text-amber-600"></i> Descargar Backup (JSON)
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <button onclick="document.getElementById('importFile').click()" class="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md text-sm font-medium transition shadow-sm text-white" title="Importar reservas desde un archivo">
-                    <i data-lucide="upload" class="w-4 h-4"></i> Importar
-                </button>
-                <input type="file" id="importFile" class="hidden" accept=".json" onchange="importarDatos(event)">
-
-                <button onclick="abrirModalDB()" class="p-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition shadow-sm text-white" title="Configurar tu Base de Datos en la Nube">
-                    <i data-lucide="settings" class="w-5 h-5"></i>
-                </button>
+            <div class="bg-white/10 px-4 py-2 rounded-lg backdrop-blur-sm border border-white/20 text-center">
+                <span class="text-xs uppercase tracking-wider text-violet-200 block font-semibold">Total General Inscritos</span>
+                <span class="text-2xl font-bold" id="total-inscritos">40</span>
             </div>
         </div>
     </header>
 
     <!-- Contenido Principal -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col gap-6">
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        <!-- Control de Fecha y Resumen de Estado -->
-        <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div class="w-full md:w-auto flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <label for="fechaSeleccionada" class="font-semibold text-slate-700 flex items-center gap-2 shrink-0">
-                    <i data-lucide="calendar" class="w-5 h-5 text-indigo-600"></i> Seleccionar Fecha:
-                </label>
-                <div class="relative w-full sm:w-auto">
-                    <input type="date" id="fechaSeleccionada" class="w-full sm:w-64 px-4 py-2 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-700 font-medium cursor-pointer" onchange="cambiarFecha(this.value)">
-                </div>
-                <div class="flex gap-2 w-full sm:w-auto">
-                    <button onclick="irDiaAnterior()" class="p-2 border border-slate-300 hover:bg-slate-100 rounded-lg transition" title="Día Anterior">
-                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
-                    </button>
-                    <button onclick="establecerFechaHoy()" class="px-3 py-2 border border-slate-300 hover:bg-slate-100 rounded-lg text-sm font-medium transition" title="Ir a Hoy">
-                        Hoy
-                    </button>
-                    <button onclick="irDiaSiguiente()" class="p-2 border border-slate-300 hover:bg-slate-100 rounded-lg transition" title="Día Siguiente">
-                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
-                    </button>
-                </div>
-            </div>
+        <!-- SECCIÓN IZQUIERDA: GRÁFICOS (Lg: 7 columnas) -->
+        <div class="lg:col-span-7 flex flex-col gap-6">
             
-            <!-- Resumen de Ocupación actual -->
-            <div class="flex flex-wrap gap-4 bg-slate-50 p-3 rounded-lg border border-slate-100 w-full md:w-auto justify-around">
-                <div class="text-center px-4">
-                    <span id="txtFechaActual" class="block font-bold text-indigo-700 text-lg">Cargando...</span>
-                    <span class="text-xs text-slate-500">Visualizando agenda</span>
+            <!-- Tarjetas de Resumen Rápido -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Nueva Alianza</span>
+                    <span class="text-xl font-bold text-violet-700 mt-2">23 Alumnos</span>
                 </div>
-                <div class="border-r border-slate-200 h-10 hidden sm:block"></div>
-                <div class="text-center px-4">
-                    <span id="indicadorOcupacion" class="block font-bold text-slate-700 text-lg">0 / 65</span>
-                    <span class="text-xs text-slate-500">Espacios Ocupados</span>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <span class="text-xs font-semibold text-slate-400 uppercase">ETE 5</span>
+                    <span class="text-xl font-bold text-indigo-600 mt-2">12 Alumnos</span>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Panorama Bíblico</span>
+                    <span class="text-xl font-bold text-amber-500 mt-2">3 Alumnos</span>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Compartiendo Fe</span>
+                    <span class="text-xl font-bold text-emerald-500 mt-2">2 Alumnos</span>
                 </div>
             </div>
+
+            <!-- Gráfico 1: Cantidad de Inscritos por Curso -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                    <h2 class="font-bold text-slate-700 text-base md:text-lg">Inscritos por Curso</h2>
+                    <span class="text-xs bg-violet-100 text-violet-700 font-semibold px-2.5 py-1 rounded-full">Global</span>
+                </div>
+                <div class="relative h-[250px] md:h-[300px]">
+                    <canvas id="chartCursos"></canvas>
+                </div>
+            </div>
+
+            <!-- Gráfico 2: Asistencia Mi Nueva Alianza con Dios -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4 border-b border-slate-100 pb-3">
+                    <div>
+                        <h2 class="font-bold text-slate-700 text-base md:text-lg">Análisis de Asistencia (1ra Clase)</h2>
+                        <p class="text-xs text-slate-400">Curso: Mi Nueva Alianza Con Dios</p>
+                    </div>
+                    <div class="flex gap-4 text-xs font-medium self-start md:self-center">
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500 block"></span> Asistió (X)</span>
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-slate-300 block"></span> No asistió</span>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                    <div class="md:col-span-5 relative h-[180px]">
+                        <canvas id="chartAsistencia"></canvas>
+                    </div>
+                    <div class="md:col-span-7 space-y-4">
+                        <div class="p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                            <div class="flex justify-between items-center text-emerald-800">
+                                <span class="text-xs font-semibold uppercase">Asistencia Confirmada</span>
+                                <span class="text-lg font-bold" id="porcentaje-asistencia">52.2%</span>
+                            </div>
+                            <p class="text-xs text-emerald-700 mt-1">12 de 23 inscritos asistieron a la primera sesión de clases.</p>
+                        </div>
+                        <div class="p-3 bg-slate-100 rounded-lg border border-slate-200">
+                            <div class="flex justify-between items-center text-slate-700">
+                                <span class="text-xs font-semibold uppercase">Pendientes / Inasistencias</span>
+                                <span class="text-lg font-bold">47.8%</span>
+                            </div>
+                            <p class="text-xs text-slate-600 mt-1">11 de 23 inscritos no cuentan con marca de asistencia en la primera clase.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
-        <!-- Leyenda explicativa de colores -->
-        <div class="flex flex-wrap gap-4 text-xs font-semibold text-slate-600 px-2">
-            <span class="flex items-center gap-1.5">
-                <span class="w-4 h-4 rounded border border-slate-300 bg-white inline-block"></span> Disponible (Haz clic en una celda para separar)
-            </span>
-            <span class="flex items-center gap-1.5">
-                <span class="w-4 h-4 rounded bg-indigo-50 border border-indigo-200 inline-block"></span> Reservado / Ocupado
-            </span>
-            <span class="flex items-center gap-1.5">
-                <span class="w-4 h-4 rounded bg-amber-50 border border-amber-200 inline-block"></span> Bloqueado / Evento Especial
-            </span>
-            <span class="flex items-center gap-1.5 text-emerald-600 animate-pulse">
-                <span class="w-4 h-4 rounded bg-emerald-100 border border-emerald-400 inline-block"></span> Parpadeo Verde: ¡Actualizado recién en línea!
-            </span>
-        </div>
+        <!-- SECCIÓN DERECHA: SELECCIÓN E INSCRITOS INTERACTIVOS (Lg: 5 columnas) -->
+        <div class="lg:col-span-5 flex flex-col gap-6">
+            
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex-1 flex flex-col min-h-[500px]">
+                <h2 class="font-bold text-slate-700 text-lg mb-1">Explorador de Alumnos</h2>
+                <p class="text-xs text-slate-400 mb-4">Haz clic en un curso para listar a sus inscritos y filtrar de forma dinámica.</p>
 
-        <!-- Tabla de Turnos y Ambientes -->
-        <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden relative">
-            <!-- Pantalla de carga para sincronización inicial -->
-            <div id="loadingOverlay" class="absolute inset-0 bg-white/70 backdrop-blur-xs flex justify-center items-center z-20 transition-opacity duration-200 hidden">
-                <div class="flex flex-col items-center gap-2">
-                    <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span class="text-xs font-semibold text-indigo-700">Actualizando datos de la nube...</span>
+                <!-- Selector de Cursos (Estilo de botones / píldoras táctiles) -->
+                <div class="grid grid-cols-2 gap-2 mb-4" id="course-selector-container">
+                    <button onclick="selectCourse('Mi Nueva Alianza Con Dios')" id="btn-nueva-alianza" class="course-btn text-left p-3 rounded-xl border-2 transition-all duration-200 focus:outline-none">
+                        <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wide">Curso</span>
+                        <span class="block text-xs md:text-sm font-bold truncate">Mi Nueva Alianza</span>
+                        <span class="inline-block mt-1 text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold" id="badge-nueva-alianza">0</span>
+                    </button>
+                    <button onclick="selectCourse('ETE 5')" id="btn-ete5" class="course-btn text-left p-3 rounded-xl border-2 transition-all duration-200 focus:outline-none">
+                        <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wide">Curso</span>
+                        <span class="block text-xs md:text-sm font-bold truncate">ETE 5</span>
+                        <span class="inline-block mt-1 text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold" id="badge-ete5">0</span>
+                    </button>
+                    <button onclick="selectCourse('Compartiendo mi fe')" id="btn-compartiendo" class="course-btn text-left p-3 rounded-xl border-2 transition-all duration-200 focus:outline-none">
+                        <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wide">Curso</span>
+                        <span class="block text-xs md:text-sm font-bold truncate">Compartiendo mi fe</span>
+                        <span class="inline-block mt-1 text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold" id="badge-compartiendo">0</span>
+                    </button>
+                    <button onclick="selectCourse('Panorama Bíblico')" id="btn-panorama" class="course-btn text-left p-3 rounded-xl border-2 transition-all duration-200 focus:outline-none">
+                        <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wide">Curso</span>
+                        <span class="block text-xs md:text-sm font-bold truncate">Panorama Bíblico</span>
+                        <span class="inline-block mt-1 text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold" id="badge-panorama">0</span>
+                    </button>
+                </div>
+
+                <!-- Buscador rápido dentro del curso seleccionado -->
+                <div class="relative mb-4">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <!-- Icono Buscar (Lupa) -->
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </span>
+                    <input type="text" id="search-input" onkeyup="filterStudents()" placeholder="Buscar alumno por nombre..." class="pl-9 pr-4 py-2 w-full text-sm rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all duration-150">
+                </div>
+
+                <!-- Contenedor de la lista de Alumnos -->
+                <div class="flex-1 overflow-y-auto max-h-[350px] border border-slate-100 rounded-xl bg-slate-50/50 p-2" id="students-container">
+                    <!-- Los alumnos se inyectarán de forma dinámica aquí -->
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between">
+                    <span>* Los nombres y estados provienen exactamente de la lista original.</span>
+                    <span class="font-medium text-slate-500">Filtrando: <b id="current-course-label" class="text-violet-600 font-bold">Todos</b></span>
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full min-w-[800px] border-collapse table-fixed text-left" id="tablaReservasImprimir">
-                    <thead>
-                        <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
-                            <th class="w-24 p-4 font-bold text-center border-r border-slate-200 bg-slate-100 sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] col-hora-print">
-                                Hora
-                            </th>
-                            <th class="p-4 font-bold text-center border-r border-slate-200">Templo</th>
-                            <th class="p-4 font-bold text-center border-r border-slate-200">2do piso</th>
-                            <th class="p-4 font-bold text-center border-r border-slate-200">4to piso</th>
-                            <th class="p-4 font-bold text-center border-r border-slate-200">5to piso adelante</th>
-                            <th class="p-4 font-bold text-center">5to piso atrás</th>
-                        </tr>
-                    </thead>
-                    <tbody id="cuerpoTabla" class="divide-y divide-slate-100 text-sm">
-                        <!-- Las filas dinámicas se insertan aquí vía JS -->
-                    </tbody>
-                </table>
-            </div>
         </div>
 
     </main>
 
     <!-- Footer -->
-    <footer class="bg-slate-800 text-slate-400 py-6 mt-12 border-t border-slate-700 print:hidden">
-        <div class="max-w-7xl mx-auto px-4 text-center text-xs flex flex-col sm:flex-row justify-between items-center gap-3">
-            <p>&copy; 2026 Separación de Ambientes. Todos los datos están protegidos y sincronizados en tiempo real.</p>
-            <p class="flex items-center gap-1">
-                Conectado y listo <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
-            </p>
-        </div>
+    <footer class="bg-white border-t border-slate-200 py-4 px-8 mt-12 text-center text-xs text-slate-400">
+        <p>&copy; 2026 Registro de Asistencias y Alumnos. Datos procesados e integrados de forma segura.</p>
     </footer>
 
-    <!-- MODAL DE RESERVA / EDICIÓN -->
-    <div id="modalReserva" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden justify-center items-center p-4 transition-opacity duration-300">
-        <div class="bg-white rounded-xl w-full max-w-md overflow-hidden shadow-2xl border border-slate-200 transform scale-95 transition-transform duration-300 flex flex-col">
-            <div class="bg-indigo-700 text-white p-4 flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <i data-lucide="edit-3" class="w-5 h-5"></i>
-                    <h3 id="modalTitulo" class="font-bold text-lg">Separar Ambiente</h3>
-                </div>
-                <button onclick="cerrarModal()" class="text-white/80 hover:text-white transition">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-            
-            <div class="p-5 flex flex-col gap-4">
-                <div class="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-slate-600">
-                    <div>
-                        <span class="block text-[10px] uppercase font-bold tracking-wider text-slate-400">Ambiente</span>
-                        <span id="lblAmbiente" class="font-semibold text-slate-800 text-sm">-</span>
-                    </div>
-                    <div>
-                        <span class="block text-[10px] uppercase font-bold tracking-wider text-slate-400">Fecha y Hora</span>
-                        <span id="lblHoraFecha" class="font-semibold text-slate-800 text-sm">-</span>
-                    </div>
-                </div>
-
-                <div>
-                    <label for="txtNombre" class="block text-xs font-bold text-slate-700 uppercase mb-1">Responsable / Grupo / Ministerio</label>
-                    <input type="text" id="txtNombre" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-700 font-medium" placeholder="Ej. Juan Pérez / Jóvenes" required>
-                </div>
-
-                <div>
-                    <label for="txtActividad" class="block text-xs font-bold text-slate-700 uppercase mb-1">Descripción / Actividad</label>
-                    <textarea id="txtActividad" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-700 text-sm" placeholder="Ej. Ensayo, reunión general, clase dominical..."></textarea>
-                </div>
-
-                <div>
-                    <label for="selTipo" class="block text-xs font-bold text-slate-700 uppercase mb-1">Tipo de Registro</label>
-                    <select id="selTipo" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-700 text-sm">
-                        <option value="reservado">Reservado (Actividad Confirmada)</option>
-                        <option value="bloqueado">Bloqueado / No disponible para uso</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="bg-slate-50 px-5 py-4 flex flex-col sm:flex-row justify-between items-center gap-2 border-t border-slate-100">
-                <button id="btnEliminar" onclick="eliminarReserva()" class="w-full sm:w-auto px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-lg text-sm transition flex items-center justify-center gap-1">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i> Liberar Turno
-                </button>
-                <div class="flex gap-2 w-full sm:w-auto justify-end">
-                    <button onclick="cerrarModal()" class="w-full sm:w-auto px-4 py-2 border border-slate-300 hover:bg-slate-100 rounded-lg text-sm font-semibold text-slate-700 transition">
-                        Cancelar
-                    </button>
-                    <button onclick="guardarReserva()" class="w-full sm:w-auto px-4 py-2 bg-indigo-700 hover:bg-indigo-800 text-white font-semibold rounded-lg text-sm shadow-sm transition">
-                        Guardar Separación
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL CONFIGURACIÓN BASE DE DATOS PERSONAL -->
-    <div id="modalDB" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden justify-center items-center p-4 transition-opacity duration-300">
-        <div class="bg-white rounded-xl w-full max-w-lg overflow-hidden shadow-2xl border border-slate-200 transform scale-95 transition-transform duration-300 flex flex-col">
-            <div class="bg-slate-800 text-white p-4 flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <i data-lucide="database" class="w-5 h-5"></i>
-                    <h3 class="font-bold text-lg">Base de Datos Personal (Firebase Cloud)</h3>
-                </div>
-                <button onclick="cerrarModalDB()" class="text-white/80 hover:text-white transition">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-            
-            <div class="p-5 flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
-                <p class="text-xs text-slate-500 leading-relaxed">
-                    Si decides descargar este archivo y usarlo de forma independiente en tu propia página web o computadora, puedes conectarlo a tu propio panel de Firebase Firestore gratuito para mantener la sincronización colaborativa en vivo de forma permanente.
-                </p>
-                <hr class="border-slate-200">
-                
-                <div>
-                    <label for="dbConfigText" class="block text-xs font-bold text-slate-700 uppercase mb-1">Credenciales del Proyecto (JSON)</label>
-                    <textarea id="dbConfigText" rows="6" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm font-mono text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-700" placeholder='{&#10;  "apiKey": "...",&#10;  "authDomain": "...",&#10;  "projectId": "...",&#10;  "storageBucket": "...",&#10;  "messagingSenderId": "...",&#10;  "appId": "..."&#10;}'></textarea>
-                </div>
-            </div>
-
-            <div class="bg-slate-50 px-5 py-4 flex justify-between items-center border-t border-slate-100">
-                <button onclick="limpiarConfigDB()" class="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold rounded-lg text-xs transition">
-                    Restaurar Modo Por Defecto
-                </button>
-                <div class="flex gap-2">
-                    <button onclick="cerrarModalDB()" class="px-4 py-2 border border-slate-300 hover:bg-slate-100 rounded-lg text-sm font-semibold text-slate-700 transition">
-                        Cerrar
-                    </button>
-                    <button onclick="guardarConfigDB()" class="px-4 py-2 bg-indigo-700 hover:bg-indigo-800 text-white font-semibold rounded-lg text-sm shadow-sm transition">
-                        Guardar y Conectar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL DE CONFIRMACIÓN DE CONTRASEÑA PARA ELIMINAR -->
-    <div id="modalPassword" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden justify-center items-center p-4 transition-opacity duration-300">
-        <div class="bg-white rounded-xl w-full max-w-sm overflow-hidden shadow-2xl border border-slate-200 transform scale-95 transition-transform duration-300 flex flex-col">
-            <div class="bg-red-600 text-white p-4 flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <i data-lucide="shield-alert" class="w-5 h-5 animate-pulse"></i>
-                    <h3 class="font-bold text-lg">Confirmar Acción</h3>
-                </div>
-                <button onclick="cerrarModalPassword()" class="text-white/80 hover:text-white transition">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-            <div class="p-5 flex flex-col gap-4">
-                <p class="text-xs text-slate-500 leading-relaxed">
-                    Para liberar este ambiente, por favor ingresa la contraseña de autorización requerida por el administrador.
-                </p>
-                <div>
-                    <label for="txtDeletePassword" class="block text-xs font-bold text-slate-700 uppercase mb-1">Contraseña de Seguridad</label>
-                    <input type="password" id="txtDeletePassword" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-red-500 focus:outline-none text-slate-700 font-medium" placeholder="••••••••" required>
-                </div>
-            </div>
-            <div class="bg-slate-50 px-5 py-4 flex justify-end gap-2 border-t border-slate-100">
-                <button onclick="cerrarModalPassword()" class="px-4 py-2 border border-slate-300 hover:bg-slate-100 rounded-lg text-sm font-semibold text-slate-700 transition">
-                    Cancelar
-                </button>
-                <button onclick="confirmarEliminarReserva()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg text-sm shadow-sm transition">
-                    Liberar Turno
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- NOTIFICACIÓN TEMPORAL (TOAST) -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 translate-y-20 opacity-0 transition-all duration-300 z-50">
-        <span id="toastIcon" class="text-indigo-400"></span>
-        <p id="toastMessage" class="text-sm font-medium"></p>
-    </div>
-
-    <!-- SCRIPT PRINCIPAL CON FIREBASE PARA REAL-TIME -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Configuración y variables proporcionadas por el sandbox
-        const sandboxConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const sandboxToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        const sandboxAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-        // Definiciones de horas y ambientes (idénticos a la foto original image_301ca2.png)
-        const horas = [
-            "10:00", "11:00", "12:00", "13:00", "14:00", "15:00",
-            "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00"
-        ];
-        const ambientes = [
-            "Templo",
-            "2do piso",
-            "4to piso",
-            "5to piso adelante",
-            "5to piso atrás"
+    <script>
+        // Los datos extraídos fielmente de la imagen suministrada (image_70897e.png)
+        // Se omiten las filas vacías que carecen de nombre.
+        const dataset = [
+            { id: 1, name: "Alejandro Cienfuegos", course: "Mi Nueva Alianza Con Dios", attended: true },
+            { id: 2, name: "Alvila Ayala Durán", course: "Mi Nueva Alianza Con Dios", attended: true }, // ACTUALIZADO (Ahora tiene x)
+            { id: 3, name: "América Rueda", course: "Mi Nueva Alianza Con Dios", attended: true },
+            { id: 4, name: "Ana Arteaga", course: "Mi Nueva Alianza Con Dios", attended: false },
+            { id: 5, name: "Andre Velasquez", course: "Mi Nueva Alianza Con Dios", attended: false },
+            { id: 6, name: "Andrea Priscila Bustamante Rom", course: "Mi Nueva Alianza Con Dios", attended: false },
+            { id: 7, name: "Biron Espinal Estela", course: "Mi Nueva Alianza Con Dios", attended: false },
+            { id: 8, name: "Carmen Huaman", course: "ETE 5", attended: false },
+            { id: 9, name: "Charito Hernandez", course: "ETE 5", attended: false },
+            { id: 10, name: "Christian Choquehuanca", course: "Mi Nueva Alianza Con Dios", attended: false },
+            { id: 11, name: "Dalia Egoavil Cuellar", course: "Mi Nueva Alianza Con Dios", attended: false },
+            { id: 12, name: "Danitza Venegas Diaz", course: "Mi Nueva Alianza Con Dios", attended: true },
+            { id: 13, name: "David Meneses", course: "ETE 5", attended: false },
+            { id: 14, name: "Eduardo Martinez Torres", course: "Compartiendo mi fe", attended: false },
+            { id: 15, name: "Elizabeth Vicente Ramos", course: "Compartiendo mi fe", attended: false },
+            { id: 16, name: "Fiorella Silvera Llufire", course: "Panorama Bíblico", attended: false },
+            { id: 17, name: "Ismael Diaz León", course: "ETE 5", attended: false },
+            { id: 18, name: "Jacqueline Yacñac", course: "Mi Nueva Alianza Con Dios", attended: false },
+            { id: 19, name: "Javier Mayorga", course: "Mi Nueva Alianza Con Dios", attended: true },
+            { id: 20, name: "Jesenia Neira", course: "Mi Nueva Alianza Con Dios", attended: false },
+            { id: 21, name: "Jorge Santos", course: "Mi Nueva Alianza Con Dios", attended: true },
+            { id: 22, name: "José Villavicencio", course: "ETE 5", attended: false },
+            { id: 23, name: "Julio Quispe", course: "ETE 5", attended: false },
+            { id: 24, name: "Luis Cienfuegos", course: "ETE 5", attended: false },
+            { id: 25, name: "Luisa Rojas Diaz", course: "Mi Nueva Alianza Con Dios", attended: false },
+            { id: 26, name: "Mabel Arias", course: "Mi Nueva Alianza Con Dios", attended: true },
+            { id: 27, name: "Maria Tineo", course: "ETE 5", attended: false },
+            { id: 28, name: "Maritza Mnedoza", course: "Panorama Bíblico", attended: false },
+            { id: 29, name: "Marquez Jeanette", course: "Mi Nueva Alianza Con Dios", attended: true },
+            { id: 30, name: "Merly Mori Santillán", course: "Mi Nueva Alianza Con Dios", attended: false },
+            { id: 31, name: "Milagros Salas", course: "Mi Nueva Alianza Con Dios", attended: true },
+            { id: 32, name: "Mishelle Viera Flores", course: "Mi Nueva Alianza Con Dios", attended: true },
+            { id: 33, name: "Nicollete Paniagua", course: "ETE 5", attended: false },
+            { id: 34, name: "Ruby Crispin", course: "ETE 5", attended: false },
+            { id: 35, name: "Stefano Cuya Salcedo", course: "Mi Nueva Alianza Con Dios", attended: true },
+            { id: 36, name: "Stephany Chiroque", course: "Panorama Bíblico", attended: false },
+            { id: 37, name: "Victoria Moreno", course: "ETE 5", attended: false },
+            { id: 38, name: "Ximena Mendoza Rojas", course: "Mi Nueva Alianza Con Dios", attended: true },
+            { id: 39, name: "Yolanda Farfan", course: "Mi Nueva Alianza Con Dios", attended: false },
+            { id: 40, name: "Yudith Loja Diaz", course: "ETE 5", attended: false }
         ];
 
-        // Estado interno de la app
-        let fechaActual = "";
-        let reservas = {}; 
-        let previousReservasDia = {}; // Para comparar cambios colaborativos y animar
-        let celdasAnimar = new Set(); // Guarda las celdas que acaban de actualizarse en la nube
-        let celdaActiva = { hora: "", ambiente: "" };
-        let activeUnsubscribe = null; 
-        
-        let firebaseApp = null;
-        let db = null;
-        let auth = null;
-        let currentUser = null;
-        let isUsingCloud = false;
+        let selectedCourse = 'Mi Nueva Alianza Con Dios'; // Por defecto iniciamos mostrando este
+        let myChart1, myChart2;
 
-        window.addEventListener('DOMContentLoaded', async () => {
-            lucide.createIcons();
-            cargarReservasDeAlmacenamiento();
-            await inicializarBaseDeDatos();
-            establecerFechaHoy();
-        });
+        // Al iniciar la ventana
+        window.onload = function() {
+            initBadges();
+            selectCourse('Mi Nueva Alianza Con Dios');
+            renderCharts();
+        };
 
-        async function inicializarBaseDeDatos() {
-            actualizarEstadoConexion("Conectando con la nube...", "yellow-400");
-            
-            let configToUse = null;
-            let tokenToUse = null;
-            let appId = sandboxAppId;
-
-            const customConfigStr = localStorage.getItem('custom_firebase_config');
-            if (customConfigStr) {
-                try {
-                    configToUse = JSON.parse(customConfigStr);
-                    appId = 'custom-user-app';
-                    document.getElementById('dbConfigText').value = JSON.stringify(configToUse, null, 2);
-                } catch(e) {
-                    console.error("Configuración personalizada inválida", e);
-                }
-            } else if (sandboxConfig) {
-                configToUse = sandboxConfig;
-                tokenToUse = sandboxToken;
-            }
-
-            if (configToUse) {
-                try {
-                    firebaseApp = initializeApp(configToUse);
-                    auth = getAuth(firebaseApp);
-                    db = getFirestore(firebaseApp);
-
-                    // Autenticación segura requerida
-                    if (tokenToUse) {
-                        await signInWithCustomToken(auth, tokenToUse);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-
-                    onAuthStateChanged(auth, (user) => {
-                        currentUser = user;
-                        if (user) {
-                            isUsingCloud = true;
-                            actualizarEstadoConexion("Sincronizado Online", "emerald-500");
-                            escucharFechaEnTiempoReal();
-                        } else {
-                            isUsingCloud = false;
-                            actualizarEstadoConexion("Solo Local (Sin Sesión)", "yellow-400");
-                        }
-                    });
-
-                } catch (error) {
-                    console.error("Error al arrancar base de datos remota:", error);
-                    isUsingCloud = false;
-                    actualizarEstadoConexion("Offline (Error de Conexión)", "red-500");
-                }
-            } else {
-                isUsingCloud = false;
-                actualizarEstadoConexion("Modo Local Activo", "indigo-400");
-            }
-        }
-
-        // Escucha en tiempo real de la fecha seleccionada usando onSnapshot (Actualización instantánea para todos)
-        function escucharFechaEnTiempoReal() {
-            if (!isUsingCloud || !db || !currentUser) {
-                renderizarTabla();
-                return;
-            }
-
-            if (activeUnsubscribe) {
-                activeUnsubscribe();
-            }
-
-            mostrarCargando(true);
-
-            const appId = typeof __app_id !== 'undefined' ? __app_id : (localStorage.getItem('custom_firebase_config') ? 'custom-user-app' : 'default-app-id');
-            // Estructura oficial de rutas para persistencia colaborativa en el Sandbox
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'reservas_por_fecha', fechaActual);
-
-            activeUnsubscribe = onSnapshot(docRef, (docSnapshot) => {
-                const nuevosDatos = docSnapshot.exists() ? docSnapshot.data() : {};
-                
-                // Comparar cambios con el render anterior para animar destellos de celdas modificadas en vivo
-                detectarActualizacionesEnVivo(nuevosDatos);
-
-                reservas[fechaActual] = nuevosDatos;
-                previousReservasDia = JSON.parse(JSON.stringify(nuevosDatos)); // Clonar para la siguiente comparación
-                
-                guardarEnAlmacenamiento();
-                renderizarTabla();
-                mostrarCargando(false);
-            }, (error) => {
-                console.error("Error en la lectura colaborativa en vivo:", error);
-                mostrarCargando(false);
-                renderizarTabla();
+        // Rellenar las insignias de conteo en los botones
+        function initBadges() {
+            const counts = {};
+            dataset.forEach(student => {
+                counts[student.course] = (counts[student.course] || 0) + 1;
             });
+            
+            document.getElementById('badge-nueva-alianza').textContent = counts['Mi Nueva Alianza Con Dios'] || 0;
+            document.getElementById('badge-ete5').textContent = counts['ETE 5'] || 0;
+            document.getElementById('badge-compartiendo').textContent = counts['Compartiendo mi fe'] || 0;
+            document.getElementById('badge-panorama').textContent = counts['Panorama Bíblico'] || 0;
+            document.getElementById('total-inscritos').textContent = dataset.length;
         }
 
-        // Detecta qué celdas cambiaron desde la última actualización remota
-        function detectarActualizacionesEnVivo(nuevosDatos) {
-            celdasAnimar.clear();
-            
-            // Recorrer todas las combinaciones posibles de hora y ambiente
-            horas.forEach(hora => {
-                ambientes.forEach(ambiente => {
-                    const clave = `${hora}_${ambiente}`;
-                    const anterior = previousReservasDia[clave];
-                    const nuevo = nuevosDatos[clave];
+        // Selección de curso activa
+        function selectCourse(courseName) {
+            selectedCourse = courseName;
+            document.getElementById('current-course-label').textContent = courseName;
+            document.getElementById('search-input').value = ''; // Limpiar buscador
 
-                    // Si el estado de la reserva cambió (se agregó, eliminó o editó el nombre)
-                    if (JSON.stringify(anterior) !== JSON.stringify(nuevo)) {
-                        celdasAnimar.add(clave);
-                    }
-                });
-            });
-        }
-
-        // Sincroniza de manera precisa utilizando campos individuales (Evita sobrescribir reservas ajenas)
-        async function guardarRegistroNube(claveCelda, datosReserva) {
-            // --- CORRECCIÓN CLAVE: UI OPTIMISTA ---
-            // Aseguramos que la reserva se guarde inmediatamente en el objeto de memoria local de Javascript
-            if (!reservas[fechaActual]) {
-                reservas[fechaActual] = {};
-            }
-
-            if (datosReserva) {
-                reservas[fechaActual][claveCelda] = datosReserva;
-            } else {
-                delete reservas[fechaActual][claveCelda];
-                if (Object.keys(reservas[fechaActual]).length === 0) {
-                    delete reservas[fechaActual];
-                }
-            }
-
-            // Guardamos localmente de inmediato para que nunca se pierda
-            guardarEnAlmacenamiento();
-            
-            // Renderizamos la tabla inmediatamente en pantalla (no esperamos a que la nube responda)
-            renderizarTabla();
-
-            // Si no estamos conectados en la nube o no hay sesión de Firebase, regresamos de inmediato
-            if (!isUsingCloud || !db || !currentUser) {
-                return;
-            }
-
-            // Si estamos conectados en línea, procedemos a sincronizar asincrónicamente con Firestore
-            try {
-                const appId = typeof __app_id !== 'undefined' ? __app_id : (localStorage.getItem('custom_firebase_config') ? 'custom-user-app' : 'default-app-id');
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'reservas_por_fecha', fechaActual);
-                
-                // Actualizar únicamente la celda modificada para evitar colisiones
-                const payload = {};
-                payload[claveCelda] = datosReserva ? datosReserva : deleteField();
-
-                await setDoc(docRef, payload, { merge: true });
-            } catch (error) {
-                console.error("Error al enviar registro a la nube:", error);
-                mostrarToast("No se pudo sincronizar en línea. Guardado localmente.", "wifi-off");
-                renderizarTabla();
-            }
-        }
-
-        // Configurar la fecha actual en pantalla
-        window.cambiarFecha = function(nuevaFecha) {
-            fechaActual = nuevaFecha;
-            document.getElementById('fechaSeleccionada').value = nuevaFecha;
-            
-            const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            const fechaObj = new Date(nuevaFecha + 'T00:00:00');
-            const fechaFormateada = fechaObj.toLocaleDateString('es-ES', opciones);
-            
-            document.getElementById('txtFechaActual').textContent = fechaFormateada.charAt(0).toUpperCase() + fechaFormateada.slice(1);
-            
-            previousReservasDia = {}; // Resetear al cambiar de día
-            escucharFechaEnTiempoReal();
-        };
-
-        window.establecerFechaHoy = function() {
-            const hoy = new Date();
-            const timezoneOffset = hoy.getTimezoneOffset() * 60000;
-            const fechaLocal = new Date(hoy.getTime() - timezoneOffset);
-            const stringHoy = fechaLocal.toISOString().split('T')[0];
-            
-            document.getElementById('fechaSeleccionada').min = stringHoy;
-            cambiarFecha(stringHoy);
-        };
-
-        window.irDiaAnterior = function() {
-            const fechaObj = new Date(fechaActual + 'T00:00:00');
-            const hoy = new Date();
-            hoy.setHours(0,0,0,0);
-            fechaObj.setDate(fechaObj.getDate() - 1);
-            
-            if (fechaObj < hoy) {
-                mostrarToast("No es posible programar fechas pasadas.", "alert-circle");
-                return;
-            }
-            cambiarFecha(fechaObj.toISOString().split('T')[0]);
-        };
-
-        window.irDiaSiguiente = function() {
-            const fechaObj = new Date(fechaActual + 'T00:00:00');
-            fechaObj.setDate(fechaObj.getDate() + 1);
-            cambiarFecha(fechaObj.toISOString().split('T')[0]);
-        };
-
-        // Dibuja la tabla interactiva de horarios
-        function renderizarTabla() {
-            const cuerpo = document.getElementById('cuerpoTabla');
-            cuerpo.innerHTML = '';
-            
-            let ocupados = 0;
-            const reservasDia = reservas[fechaActual] || {};
-
-            horas.forEach(hora => {
-                const fila = document.createElement('tr');
-                fila.className = "hover:bg-slate-50/50 transition duration-150";
-
-                const celdaHora = document.createElement('td');
-                celdaHora.className = "p-4 font-bold text-center text-slate-600 bg-slate-50 border-r border-slate-200 sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] col-hora-print";
-                celdaHora.textContent = hora;
-                fila.appendChild(celdaHora);
-
-                ambientes.forEach(ambiente => {
-                    const celda = document.createElement('td');
-                    celda.className = "p-3 border-r border-slate-200 text-center relative group min-h-[70px] align-middle transition duration-300 cursor-pointer";
-                    
-                    const claveCelda = `${hora}_${ambiente}`;
-                    const reserva = reservasDia[claveCelda];
-
-                    // Aplicar animación de actualización en vivo si se detectó cambio colaborativo
-                    if (celdasAnimar.has(claveCelda)) {
-                        celda.classList.add('live-update-animation');
-                        setTimeout(() => {
-                            celda.classList.remove('live-update-animation');
-                        }, 2100);
-                    }
-
-                    if (reserva) {
-                        ocupados++;
-                        if (reserva.tipo === 'bloqueado') {
-                            celda.className += " bg-amber-50 hover:bg-amber-100 text-amber-900 border-l-4 border-l-amber-500";
-                            celda.innerHTML = `
-                                <div class="font-bold text-xs truncate max-w-[130px] mx-auto text-amber-900">${reserva.nombre || 'BLOQUEADO'}</div>
-                                <div class="text-[10px] text-amber-700 truncate max-w-[130px] mx-auto">${reserva.actividad || 'No disponible'}</div>
-                            `;
-                        } else {
-                            celda.className += " bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border-l-4 border-l-indigo-500";
-                            celda.innerHTML = `
-                                <div class="font-bold text-xs truncate max-w-[130px] mx-auto text-indigo-900">${reserva.nombre}</div>
-                                <div class="text-[10px] text-indigo-700 truncate max-w-[130px] mx-auto">${reserva.actividad || 'Actividad general'}</div>
-                            `;
-                        }
-                    } else {
-                        celda.className += " hover:bg-slate-100 text-slate-300";
-                        celda.innerHTML = `
-                            <span class="opacity-0 group-hover:opacity-100 text-xs font-semibold text-indigo-500 transition-opacity">Reservar</span>
-                        `;
-                    }
-
-                    celda.onclick = () => abrirModal(hora, ambiente);
-                    fila.appendChild(celda);
-                });
-
-                cuerpo.appendChild(fila);
-            });
-
-            const totalCeldas = horas.length * ambientes.length;
-            document.getElementById('indicadorOcupacion').textContent = `${ocupados} / ${totalCeldas}`;
-        }
-
-        // Abrir formulario
-        window.abrirModal = function(hora, ambiente) {
-            celdaActiva = { hora, ambiente };
-            
-            document.getElementById('lblAmbiente').textContent = ambiente;
-            document.getElementById('lblHoraFecha').textContent = `${hora} - ${fechaActual}`;
-
-            const reservasDia = reservas[fechaActual] || {};
-            const claveCelda = `${hora}_${ambiente}`;
-            const reservaExistente = reservasDia[claveCelda];
-
-            if (reservaExistente) {
-                document.getElementById('modalTitulo').textContent = "Editar Separación";
-                document.getElementById('txtNombre').value = reservaExistente.nombre;
-                document.getElementById('txtActividad').value = reservaExistente.actividad || "";
-                document.getElementById('selTipo').value = reservaExistente.tipo || "reservado";
-                document.getElementById('btnEliminar').classList.remove('hidden');
-            } else {
-                document.getElementById('modalTitulo').textContent = "Separar Ambiente";
-                document.getElementById('txtNombre').value = "";
-                document.getElementById('txtActividad').value = "";
-                document.getElementById('selTipo').value = "reservado";
-                document.getElementById('btnEliminar').classList.add('hidden');
-            }
-
-            const modal = document.getElementById('modalReserva');
-            modal.classList.add('modal-active');
-            document.body.classList.add('modal-open');
-            setTimeout(() => {
-                modal.firstElementChild.classList.remove('scale-95');
-                modal.firstElementChild.classList.add('scale-100');
-            }, 10);
-        };
-
-        window.cerrarModal = function() {
-            const modal = document.getElementById('modalReserva');
-            modal.firstElementChild.classList.remove('scale-100');
-            modal.firstElementChild.classList.add('scale-95');
-            
-            setTimeout(() => {
-                modal.classList.remove('modal-active');
-                document.body.classList.remove('modal-open');
-            }, 150);
-        };
-
-        // Guardar cambios en local y enviar a la nube en tiempo real
-        window.guardarReserva = async function() {
-            const nombre = document.getElementById('txtNombre').value.trim();
-            const actividad = document.getElementById('txtActividad').value.trim();
-            const tipo = document.getElementById('selTipo').value;
-
-            if (!nombre) {
-                mostrarToast("Por favor, ingresa el responsable o ministerio.", "alert-triangle");
-                document.getElementById('txtNombre').focus();
-                return;
-            }
-
-            const claveCelda = `${celdaActiva.hora}_${celdaActiva.ambiente}`;
-            const datosReserva = { nombre, actividad, tipo };
-
-            // Ejecutar guardado (local + nube optimista)
-            await guardarRegistroNube(claveCelda, datosReserva);
-            
-            cerrarModal();
-            mostrarToast("Registro guardado e informado en línea.", "check-circle");
-        };
-
-        // Eliminar reserva de la grilla
-        window.eliminarReserva = function() {
-            abrirModalPassword();
-        };
-
-        // Funciones de control del modal de seguridad para eliminación
-        window.abrirModalPassword = function() {
-            document.getElementById('txtDeletePassword').value = "";
-            const modal = document.getElementById('modalPassword');
-            modal.classList.add('modal-active');
-            document.body.classList.add('modal-open');
-            setTimeout(() => {
-                modal.firstElementChild.classList.remove('scale-95');
-                modal.firstElementChild.classList.add('scale-100');
-                document.getElementById('txtDeletePassword').focus();
-            }, 10);
-        };
-
-        window.cerrarModalPassword = function() {
-            const modal = document.getElementById('modalPassword');
-            modal.firstElementChild.classList.remove('scale-100');
-            modal.firstElementChild.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.remove('modal-active');
-                document.body.classList.remove('modal-open');
-            }, 150);
-        };
-
-        window.confirmarEliminarReserva = async function() {
-            const passwordInput = document.getElementById('txtDeletePassword').value.trim();
-            
-            if (passwordInput === "IACYM2000") {
-                const claveCelda = `${celdaActiva.hora}_${celdaActiva.ambiente}`;
-                
-                // Enviar borrado de forma segura
-                await guardarRegistroNube(claveCelda, null);
-                
-                cerrarModalPassword();
-                cerrarModal(); // Cerrar también el modal principal de edición
-                mostrarToast("Espacio liberado y actualizado en vivo.", "trash-2");
-            } else {
-                mostrarToast("Contraseña incorrecta. Inténtalo de nuevo.", "shield-off");
-                document.getElementById('txtDeletePassword').focus();
-                document.getElementById('txtDeletePassword').select();
-            }
-        };
-
-        // Exportación de Agenda Diaria a CSV compatible con Microsoft Excel
-        window.exportarCSVReporte = function() {
-            try {
-                const reservasDia = reservas[fechaActual] || {};
-                
-                // Construcción del contenido del CSV
-                let csvContent = "\uFEFF"; // BOM para asegurar codificación UTF-8 correcta en Excel
-                csvContent += "FECHA: " + fechaActual + "\r\n";
-                csvContent += "HORA;TEMPLO;2DO PISO;4TO PISO;5TO PISO ADELANTE;5TO PISO ATRÁS\r\n";
-
-                horas.forEach(hora => {
-                    let filaCSV = hora;
-                    ambientes.forEach(ambiente => {
-                        const clave = `${hora}_${ambiente}`;
-                        const reserva = reservasDia[clave];
-                        if (reserva) {
-                            const nombreLimpio = reserva.nombre.replace(/;/g, ' ');
-                            const descLimpia = (reserva.actividad || 'Actividad').replace(/;/g, ' ');
-                            filaCSV += `;"${nombreLimpio} (${descLimpia})"`;
-                        } else {
-                            filaCSV += ";\"Disponible\"";
-                        }
-                    });
-                    csvContent += filaCSV + "\r\n";
-                });
-
-                // Descarga del archivo
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.setAttribute('download', `agenda_ambientes_${fechaActual}.csv`);
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                
-                mostrarToast("Agenda descargada como reporte CSV.", "file-spreadsheet");
-            } catch (err) {
-                console.error("Error al exportar reporte diario:", err);
-                mostrarToast("Ocurrió un error al generar el CSV.", "alert-triangle");
-            }
-        };
-
-        // Imprimir la grilla del día en un formato de reporte limpio
-        window.imprimirAgenda = function() {
-            window.print();
-        };
-
-        // Exportar copia de seguridad completa (JSON)
-        window.exportarBackupJSON = function() {
-            try {
-                const datosStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(reservas, null, 2));
-                const descargarAncla = document.createElement('a');
-                descargarAncla.setAttribute("href", datosStr);
-                descargarAncla.setAttribute("download", `respaldo_completo_reservas_${new Date().toISOString().split('T')[0]}.json`);
-                document.body.appendChild(descargarAncla);
-                descargarAncla.click();
-                descargarAncla.remove();
-                mostrarToast("Copia de seguridad completa descargada.", "download");
-            } catch (err) {
-                mostrarToast("Error al exportar backup JSON.", "alert-triangle");
-            }
-        };
-
-        // Importar datos desde un archivo JSON externo
-        window.importarDatos = function(evento) {
-            const archivo = evento.target.files[0];
-            if (!archivo) return;
-
-            const lector = new FileReader();
-            lector.onload = async function(e) {
-                try {
-                    const datosImportados = JSON.parse(e.target.result);
-                    if (typeof datosImportados === 'object') {
-                        // Reemplazar localmente
-                        reservas = datosImportados;
-                        guardarEnAlmacenamiento();
-                        
-                        // Si está conectado, sincronizar cada día importado (Especialmente el activo)
-                        if (isUsingCloud && reservas[fechaActual]) {
-                            const appId = typeof __app_id !== 'undefined' ? __app_id : (localStorage.getItem('custom_firebase_config') ? 'custom-user-app' : 'default-app-id');
-                            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'reservas_por_fecha', fechaActual);
-                            await setDoc(docRef, reservas[fechaActual]);
-                        }
-                        
-                        renderizarTabla();
-                        mostrarToast("¡Reservas restauradas con éxito!", "upload-cloud");
-                    } else {
-                        mostrarToast("El formato del archivo es inválido.", "alert-octagon");
-                    }
-                } catch (err) {
-                    mostrarToast("Error al leer el archivo seleccionado.", "alert-octagon");
-                }
+            // Actualizar diseño de botones
+            const buttonMap = {
+                'Mi Nueva Alianza Con Dios': { id: 'btn-nueva-alianza', active: 'border-violet-600 bg-violet-50/50 text-violet-900', normal: 'border-slate-200 bg-white hover:bg-slate-50' },
+                'ETE 5': { id: 'btn-ete5', active: 'border-indigo-600 bg-indigo-50/50 text-indigo-900', normal: 'border-slate-200 bg-white hover:bg-slate-50' },
+                'Compartiendo mi fe': { id: 'btn-compartiendo', active: 'border-emerald-600 bg-emerald-50/50 text-emerald-900', normal: 'border-slate-200 bg-white hover:bg-slate-50' },
+                'Panorama Bíblico': { id: 'btn-panorama', active: 'border-amber-600 bg-amber-50/50 text-amber-900', normal: 'border-slate-200 bg-white hover:bg-slate-50' }
             };
-            lector.readAsText(archivo);
-        };
 
-        // Menú desplegable de exportar
-        window.toggleDropdown = function() {
-            const dropdown = document.getElementById('opcionesExportar');
-            dropdown.classList.toggle('hidden');
-        };
+            Object.keys(buttonMap).forEach(key => {
+                const btn = document.getElementById(buttonMap[key].id);
+                if (key === courseName) {
+                    btn.className = `course-btn text-left p-3 rounded-xl border-2 transition-all duration-200 focus:outline-none ${buttonMap[key].active}`;
+                } else {
+                    btn.className = `course-btn text-left p-3 rounded-xl border-2 transition-all duration-200 focus:outline-none ${buttonMap[key].normal}`;
+                }
+            });
 
-        // Cerrar dropdown si se hace clic afuera
-        document.addEventListener('click', function(event) {
-            const dropdownContainer = document.getElementById('dropdownExportar');
-            const dropdownMenu = document.getElementById('opcionesExportar');
-            if (dropdownContainer && !dropdownContainer.contains(event.target)) {
-                if (dropdownMenu) dropdownMenu.classList.add('hidden');
-            }
-        });
+            renderStudents();
+        }
 
-        // Configuración manual de Firestore para uso externo
-        window.abrirModalDB = function() {
-            const modal = document.getElementById('modalDB');
-            modal.classList.add('modal-active');
-            document.body.classList.add('modal-open');
-            setTimeout(() => {
-                modal.firstElementChild.classList.remove('scale-95');
-                modal.firstElementChild.classList.add('scale-100');
-            }, 10);
-        };
+        // Mostrar los alumnos correspondientes al curso y el buscador
+        function renderStudents() {
+            const container = document.getElementById('students-container');
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+            
+            // Filtrar datos
+            const filtered = dataset.filter(student => 
+                student.course === selectedCourse && 
+                student.name.toLowerCase().includes(query)
+            );
 
-        window.cerrarModalDB = function() {
-            const modal = document.getElementById('modalDB');
-            modal.firstElementChild.classList.remove('scale-100');
-            modal.firstElementChild.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.remove('modal-active');
-                document.body.classList.remove('modal-open');
-            }, 150);
-        };
-
-        window.guardarConfigDB = function() {
-            const configText = document.getElementById('dbConfigText').value.trim();
-            if (!configText) {
-                mostrarToast("Introduce credenciales válidas en formato JSON.", "alert-triangle");
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-12 text-center text-slate-400">
+                        <svg class="h-10 w-10 mb-2 stroke-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p class="text-sm font-semibold">No se encontraron inscritos</p>
+                        <p class="text-xs">Prueba escribiendo otro nombre o criterio.</p>
+                    </div>
+                `;
                 return;
             }
 
-            try {
-                const parsed = JSON.parse(configText);
-                if (parsed.apiKey && parsed.projectId) {
-                    localStorage.setItem('custom_firebase_config', JSON.stringify(parsed));
-                    mostrarToast("Base de datos configurada. Recargando página...", "check");
-                    cerrarModalDB();
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                } else {
-                    mostrarToast("El objeto no contiene credenciales de Firebase válidas.", "alert-circle");
-                }
-            } catch(e) {
-                mostrarToast("Error: El texto no es un JSON correcto.", "alert-circle");
-            }
-        };
+            container.innerHTML = filtered.map(student => {
+                const attendedText = student.attended 
+                    ? '<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100 flex items-center gap-1">✓ Asistió (X en tabla)</span>' 
+                    : '<span class="text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1">Sin asistencia</span>';
 
-        window.limpiarConfigDB = function() {
-            localStorage.removeItem('custom_firebase_config');
-            mostrarToast("Regresando a base de datos por defecto. Recargando...", "trash-2");
-            cerrarModalDB();
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        };
-
-        // Almacenamiento local (LocalStorage) como respaldo
-        function guardarEnAlmacenamiento() {
-            localStorage.setItem('reservas_ambientes_v2', JSON.stringify(reservas));
+                return `
+                    <div class="flex items-center justify-between p-3 mb-2 bg-white rounded-xl shadow-sm border border-slate-100/80 transition-all hover:translate-x-1 duration-150">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs uppercase ${student.attended ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">
+                                ${student.name.charAt(0)}
+                            </div>
+                            <div>
+                                <span class="font-semibold text-sm text-slate-700 block leading-tight">${student.name}</span>
+                                <span class="text-[10px] text-slate-400 block mt-0.5">${student.course}</span>
+                            </div>
+                        </div>
+                        <div>
+                            ${attendedText}
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
-        function cargarReservasDeAlmacenamiento() {
-            const guardadas = localStorage.getItem('reservas_ambientes_v2') || localStorage.getItem('reservas_ambientes');
-            if (guardadas) {
-                try {
-                    reservas = JSON.parse(guardadas);
-                } catch (e) {
-                    reservas = {};
-                }
-            }
+        // Función para disparar en tiempo real la búsqueda
+        // Para asegurar adaptabilidad móvil, se enlaza directamente al evento 'keyup' y 'input'
+        function filterStudents() {
+            renderStudents();
         }
 
-        // Controladores visuales de estados
-        function actualizarEstadoConexion(texto, colorClass) {
-            const dot = document.getElementById('statusDot');
-            const txt = document.getElementById('statusText');
-            if (dot && txt) {
-                dot.className = `w-2.5 h-2.5 rounded-full bg-${colorClass}`;
-                if (colorClass === 'yellow-400') {
-                    dot.classList.add('animate-pulse');
-                } else {
-                    dot.classList.remove('animate-pulse');
+        // Inicializar y renderizar los gráficos de Chart.js
+        function renderCharts() {
+            // Datos del Gráfico 1 (Inscritos por curso)
+            const ctx1 = document.getElementById('chartCursos').getContext('2d');
+            myChart1 = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: ['Mi Nueva Alianza', 'ETE 5', 'Panorama Bíblico', 'Compartiendo mi fe'],
+                    datasets: [{
+                        label: 'Número de Alumnos Matriculados',
+                        data: [23, 12, 3, 2],
+                        backgroundColor: [
+                            'rgba(124, 58, 237, 0.85)', // Violeta
+                            'rgba(79, 70, 229, 0.85)',  // Indigo
+                            'rgba(245, 158, 11, 0.85)', // Ámbar
+                            'rgba(16, 185, 129, 0.85)'  // Esmeralda
+                        ],
+                        borderColor: [
+                            '#7c3aed',
+                            '#4f46e5',
+                            '#f59e0b',
+                            '#10b981'
+                        ],
+                        borderWidth: 1.5,
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            padding: 12,
+                            backgroundColor: '#1e293b',
+                            titleFont: { size: 13, weight: 'bold' },
+                            bodyFont: { size: 12 }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#f1f5f9'
+                            },
+                            ticks: {
+                                font: { size: 11 }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: { size: 11, weight: 'bold' }
+                            }
+                        }
+                    }
                 }
-                txt.textContent = texto;
-            }
-        }
+            });
 
-        function mostrarCargando(visible) {
-            const overlay = document.getElementById('loadingOverlay');
-            if (overlay) {
-                if (visible) {
-                    overlay.classList.remove('hidden');
-                    overlay.classList.add('opacity-100');
-                } else {
-                    overlay.classList.add('hidden');
-                    overlay.classList.remove('opacity-100');
+            // Datos del Gráfico 2 (Asistencia de Mi Nueva Alianza Con Dios)
+            // 12 Alumnos con X (Asistieron)
+            // 11 Alumnos en blanco (No asistieron)
+            const ctx2 = document.getElementById('chartAsistencia').getContext('2d');
+            myChart2 = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Asistió (X)', 'No asistió'],
+                    datasets: [{
+                        data: [12, 11], // Actualizado a 12 de asistencia con Alvila Ayala Durán
+                        backgroundColor: [
+                            '#10b981', // Verde Esmeralda
+                            '#cbd5e1'  // Gris Slate
+                        ],
+                        hoverOffset: 4,
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            padding: 12,
+                            backgroundColor: '#1e293b',
+                            titleFont: { size: 13, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const total = 23;
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return ` Alumnos: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
                 }
-            }
+            });
         }
-
-        // Notificaciones globales (Toast)
-        window.mostrarToast = function(mensaje, iconName = 'info') {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toastMessage');
-            const toastIcon = document.getElementById('toastIcon');
-
-            if (toast && toastMsg && toastIcon) {
-                toastMsg.textContent = mensaje;
-                toastIcon.innerHTML = `<i data-lucide="${iconName}" class="w-5 h-5 text-indigo-400"></i>`;
-                lucide.createIcons();
-
-                toast.classList.remove('translate-y-20', 'opacity-0');
-                toast.classList.add('translate-y-0', 'opacity-100');
-
-                setTimeout(() => {
-                    toast.classList.remove('translate-y-0', 'opacity-100');
-                    toast.classList.add('translate-y-20', 'opacity-0');
-                }, 3500);
-            }
-        };
     </script>
-
-    <!-- ESTILOS EXCLUSIVOS PARA IMPRESIÓN LIMPIA DE REPORTES -->
-    <style>
-        @media print {
-            body { background: white; color: black; font-size: 11px; }
-            header, footer, label, select, input, button, .print\:hidden, #toast, .col-hora-print {
-                display: none !important;
-            }
-            main { padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
-            .bg-white { box-shadow: none !important; border: none !important; }
-            table { width: 100% !important; border-collapse: collapse !important; table-layout: fixed !important; }
-            th, td { border: 1px solid #cbd5e1 !important; padding: 6px !important; text-align: center !important; font-size: 10px !important; color: black !important; background: transparent !important; }
-            th { font-weight: bold !important; background-color: #f1f5f9 !important; }
-            tr td:first-child { font-weight: bold; }
-        }
-    </style>
 </body>
 </html>
