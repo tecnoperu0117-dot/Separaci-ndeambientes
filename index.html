@@ -1,432 +1,1064 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estadísticas de Cursos y Asistencia</title>
-    <!-- Tailwind CSS para el diseño premium -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js para los gráficos dinámicos -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Inscritos y Asistencia - Alianza con Dios</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    /* Estilización de scrollbars para mantener el estilo limpio */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-    <!-- Header / Barra Superior -->
-    <header class="bg-gradient-to-r from-violet-800 to-indigo-900 text-white py-6 px-4 md:px-8 shadow-md">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-                <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Control de Alumnos y Asistencia</h1>
-                <p class="text-violet-200 text-sm mt-1">Reportes estadísticos y consulta rápida de matriculados (Actualizado)</p>
-            </div>
-            <div class="bg-white/10 px-4 py-2 rounded-lg backdrop-blur-sm border border-white/20 text-center">
-                <span class="text-xs uppercase tracking-wider text-violet-200 block font-semibold">Total General Inscritos</span>
-                <span class="text-2xl font-bold" id="total-inscritos">40</span>
-            </div>
+  <!-- -->
+  <header class="bg-gradient-to-r from-indigo-700 via-indigo-800 to-purple-800 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-white/10 p-2 rounded-xl backdrop-blur-md border border-white/20">
+          <i data-lucide="graduation-cap" class="w-8 h-8 text-indigo-200"></i>
         </div>
-    </header>
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight">Gestión Académica v3</h1>
+          <p class="text-xs text-indigo-200">Control de Inscritos, Estadísticas y Asistencia Activa</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="openNewStudentModal()" class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition shadow-md hover:shadow-lg">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          Nuevo Alumno
+        </button>
+        <button onclick="confirmRestore()" class="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-xl text-sm font-medium transition border border-white/10" title="Restablecer a la información de la imagen_f122f2.png">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+          Sincronizar Captura
+        </button>
+      </div>
+    </div>
+  </header>
 
-    <!-- Contenido Principal -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    
+    <!-- -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex items-center gap-4">
+        <div class="bg-indigo-50 text-indigo-600 p-3 rounded-xl">
+          <i data-lucide="users" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <span class="text-xs font-semibold text-slate-400 block uppercase tracking-wider">Total Inscritos</span>
+          <span id="stat-total-students" class="text-2xl font-bold text-slate-800">0</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex items-center gap-4">
+        <div class="bg-pink-50 text-pink-600 p-3 rounded-xl">
+          <i data-lucide="book-open" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <span class="text-xs font-semibold text-slate-400 block uppercase tracking-wider">Total Cursos</span>
+          <span id="stat-total-courses" class="text-2xl font-bold text-slate-800">0</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex items-center gap-4">
+        <div class="bg-emerald-50 text-emerald-600 p-3 rounded-xl">
+          <i data-lucide="award" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <span class="text-xs font-semibold text-slate-400 block uppercase tracking-wider">Curso Más Popular</span>
+          <span id="stat-top-course" class="text-sm font-bold text-slate-800 truncate block max-w-[180px]">Ninguno</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex items-center gap-4">
+        <div class="bg-amber-50 text-amber-600 p-3 rounded-xl">
+          <i data-lucide="calendar-check" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <span class="text-xs font-semibold text-slate-400 block uppercase tracking-wider">Asistencia Global MNA</span>
+          <span id="stat-avg-attendance" class="text-2xl font-bold text-slate-800">0%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Course bar chart -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="bar-chart-3" class="w-4.5 h-4.5 text-indigo-500"></i>
+            Inscritos por Curso
+          </h3>
+          <span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">General</span>
+        </div>
+        <div class="h-56 relative w-full">
+          <canvas id="chart-courses"></canvas>
+        </div>
+      </div>
+
+      <!-- MNA Class Attendance Area/Line Chart -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="trending-up" class="w-4.5 h-4.5 text-purple-500"></i>
+            Asistencia MNA por Clase (1-17)
+          </h3>
+          <span class="text-[10px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-medium">Nueva Alianza</span>
+        </div>
+        <div class="h-56 relative w-full">
+          <canvas id="chart-mna-attendance"></canvas>
+        </div>
+      </div>
+
+      <!-- Quick Metrics/General summary for tracked courses -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2 mb-3">
+            <i data-lucide="activity" class="w-4.5 h-4.5 text-indigo-600"></i>
+            Análisis de Alianza & Edades
+          </h3>
+          <p class="text-[11px] text-slate-500 leading-relaxed mb-4">
+            Distribución de asistencia y de edades según datos integrados de la captura <code class="bg-slate-100 px-1 rounded text-indigo-600">image_f122f2.png</code>.
+          </p>
+
+          <div class="space-y-3">
+            <div class="p-2.5 bg-indigo-50/50 rounded-xl border border-indigo-100/50">
+              <div class="flex justify-between items-center text-xs text-indigo-900 mb-1">
+                <span class="font-medium">Turno Mañana (8:30 am)</span>
+                <span id="mna-morning-count" class="font-bold">0</span>
+              </div>
+              <div class="w-full bg-indigo-100 rounded-full h-1.5">
+                <div id="mna-morning-progress" class="bg-indigo-600 h-1.5 rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div class="p-2.5 bg-purple-50/50 rounded-xl border border-purple-100/50">
+              <div class="flex justify-between items-center text-xs text-purple-900 mb-1">
+                <span class="font-medium">Turno Media Mañana (10:00 am)</span>
+                <span id="mna-late-count" class="font-bold">0</span>
+              </div>
+              <div class="w-full bg-purple-100 rounded-full h-1.5">
+                <div id="mna-late-progress" class="bg-purple-600 h-1.5 rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div class="p-2.5 bg-amber-50/50 rounded-xl border border-amber-100/50">
+              <div class="flex justify-between items-center text-xs text-amber-900">
+                <span class="font-medium">Alumnos con Edad Registrada</span>
+                <span id="stat-with-age" class="font-bold">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 mt-4 flex items-center justify-between">
+          <div>
+            <span class="text-[10px] text-slate-400 block">Total en el programa MNA</span>
+            <div class="flex items-baseline gap-1.5">
+              <span id="mna-total-count" class="text-2xl font-extrabold text-indigo-600">0</span>
+              <span class="text-[10px] text-slate-500">alumnos</span>
+            </div>
+          </div>
+          <span class="text-[10px] text-slate-400 italic">Clases 1-17 activas</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="space-y-1">
+          <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="book-open-check" class="w-5 h-5 text-indigo-600"></i>
+            Listado de Alumnos por Curso
+          </h2>
+          <p class="text-xs text-slate-500">Alumnos organizados alfabéticamente. Haz clic en las casillas numéricas para modificar asistencias.</p>
+        </div>
         
-        <!-- SECCIÓN IZQUIERDA: GRÁFICOS (Lg: 7 columnas) -->
-        <div class="lg:col-span-7 flex flex-col gap-6">
-            
-            <!-- Tarjetas de Resumen Rápido -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
-                    <span class="text-xs font-semibold text-slate-400 uppercase">Nueva Alianza</span>
-                    <span class="text-xl font-bold text-violet-700 mt-2">23 Alumnos</span>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
-                    <span class="text-xs font-semibold text-slate-400 uppercase">ETE 5</span>
-                    <span class="text-xl font-bold text-indigo-600 mt-2">12 Alumnos</span>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
-                    <span class="text-xs font-semibold text-slate-400 uppercase">Panorama Bíblico</span>
-                    <span class="text-xl font-bold text-amber-500 mt-2">3 Alumnos</span>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
-                    <span class="text-xs font-semibold text-slate-400 uppercase">Compartiendo Fe</span>
-                    <span class="text-xl font-bold text-emerald-500 mt-2">2 Alumnos</span>
-                </div>
+        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <!-- Course Selector -->
+          <div class="relative flex-grow sm:flex-none">
+            <select id="course-selector" onchange="handleCourseChange()" class="w-full sm:w-80 pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-medium text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm appearance-none cursor-pointer">
+              <!-- Cursos cargados de forma dinámica -->
+            </select>
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <i data-lucide="filter" class="w-4 h-4"></i>
             </div>
+          </div>
 
-            <!-- Gráfico 1: Cantidad de Inscritos por Curso -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-                    <h2 class="font-bold text-slate-700 text-base md:text-lg">Inscritos por Curso</h2>
-                    <span class="text-xs bg-violet-100 text-violet-700 font-semibold px-2.5 py-1 rounded-full">Global</span>
-                </div>
-                <div class="relative h-[250px] md:h-[300px]">
-                    <canvas id="chartCursos"></canvas>
-                </div>
+          <!-- Search Input -->
+          <div class="relative flex-grow sm:flex-none">
+            <input type="text" id="search-student" oninput="renderStudentList()" placeholder="Buscar estudiante..." class="w-full sm:w-64 pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <i data-lucide="search" class="w-4 h-4"></i>
             </div>
+          </div>
+        </div>
+      </div>
 
-            <!-- Gráfico 2: Asistencia Mi Nueva Alianza con Dios -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4 border-b border-slate-100 pb-3">
-                    <div>
-                        <h2 class="font-bold text-slate-700 text-base md:text-lg">Análisis de Asistencia (1ra Clase)</h2>
-                        <p class="text-xs text-slate-400">Curso: Mi Nueva Alianza Con Dios</p>
-                    </div>
-                    <div class="flex gap-4 text-xs font-medium self-start md:self-center">
-                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500 block"></span> Asistió (X)</span>
-                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-slate-300 block"></span> No asistió</span>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                    <div class="md:col-span-5 relative h-[180px]">
-                        <canvas id="chartAsistencia"></canvas>
-                    </div>
-                    <div class="md:col-span-7 space-y-4">
-                        <div class="p-3 bg-emerald-50 rounded-lg border border-emerald-100">
-                            <div class="flex justify-between items-center text-emerald-800">
-                                <span class="text-xs font-semibold uppercase">Asistencia Confirmada</span>
-                                <span class="text-lg font-bold" id="porcentaje-asistencia">52.2%</span>
-                            </div>
-                            <p class="text-xs text-emerald-700 mt-1">12 de 23 inscritos asistieron a la primera sesión de clases.</p>
-                        </div>
-                        <div class="p-3 bg-slate-100 rounded-lg border border-slate-200">
-                            <div class="flex justify-between items-center text-slate-700">
-                                <span class="text-xs font-semibold uppercase">Pendientes / Inasistencias</span>
-                                <span class="text-lg font-bold">47.8%</span>
-                            </div>
-                            <p class="text-xs text-slate-600 mt-1">11 de 23 inscritos no cuentan con marca de asistencia en la primera clase.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <!-- Course info banner -->
+      <div id="special-banner" class="hidden px-5 py-3 bg-gradient-to-r from-amber-50 to-amber-100/50 border-b border-amber-200/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-amber-900">
+        <div class="flex items-center gap-2 font-medium">
+          <i data-lucide="info" class="w-4 h-4 text-amber-600"></i>
+          <span>Programa Mi Nueva Alianza: Registro interactivo para 17 clases. ¡Haz clic en los números para cambiar estado!</span>
+        </div>
+        <div class="flex gap-4">
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-emerald-500 inline-block"></span> Presente (x)</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-slate-200 inline-block"></span> Ausente</span>
+        </div>
+      </div>
 
+      <!-- -->
+      <div class="overflow-x-auto w-full">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50/70 border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <th class="py-4 px-5 w-12 text-center">N°</th>
+              <th class="py-4 px-4 min-w-[220px]">Nombres y Apellidos</th>
+              <th class="py-4 px-4 w-20 text-center">Edad</th>
+              <th class="py-4 px-4 w-32">Celular</th>
+              <th id="th-start-date" class="py-4 px-4 w-36 hidden">Fecha Inicio</th>
+              <th id="th-classes" class="py-4 px-4 hidden">Asistencias por Clase (1 al 17)</th>
+              <th class="py-4 px-4 w-20 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="student-table-body" class="divide-y divide-slate-100 text-sm text-slate-700">
+            <!-- Renderizado dinámico -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="hidden flex-col items-center justify-center p-12 text-center space-y-3">
+        <div class="p-4 bg-slate-100 rounded-full text-slate-400">
+          <i data-lucide="users-round" class="w-12 h-12"></i>
+        </div>
+        <h4 class="text-base font-semibold text-slate-700">No se encontraron inscritos</h4>
+        <p class="text-xs text-slate-400 max-w-sm">No existen alumnos registrados en este curso o ninguno coincide con el filtro de búsqueda actual.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- -->
+  <!-- New Student Modal -->
+  <div id="new-student-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md shadow-xl border border-slate-100 overflow-hidden transform transition-all duration-300">
+      <div class="px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white flex justify-between items-center">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+          <i data-lucide="user-plus" class="w-5 h-5"></i>
+          Agregar Nuevo Alumno
+        </h3>
+        <button onclick="closeNewStudentModal()" class="text-white/80 hover:text-white transition p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="new-student-form" onsubmit="handleNewStudentSubmit(event)" class="p-6 space-y-4">
+        <!-- Name -->
+        <div>
+          <label for="input-name" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Nombres y Apellidos *</label>
+          <input type="text" id="input-name" required placeholder="Ej. Carlos Mendoza Torres" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
         </div>
 
-        <!-- SECCIÓN DERECHA: SELECCIÓN E INSCRITOS INTERACTIVOS (Lg: 5 columnas) -->
-        <div class="lg:col-span-5 flex flex-col gap-6">
-            
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex-1 flex flex-col min-h-[500px]">
-                <h2 class="font-bold text-slate-700 text-lg mb-1">Explorador de Alumnos</h2>
-                <p class="text-xs text-slate-400 mb-4">Haz clic en un curso para listar a sus inscritos y filtrar de forma dinámica.</p>
-
-                <!-- Selector de Cursos (Estilo de botones / píldoras táctiles) -->
-                <div class="grid grid-cols-2 gap-2 mb-4" id="course-selector-container">
-                    <button onclick="selectCourse('Mi Nueva Alianza Con Dios')" id="btn-nueva-alianza" class="course-btn text-left p-3 rounded-xl border-2 transition-all duration-200 focus:outline-none">
-                        <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wide">Curso</span>
-                        <span class="block text-xs md:text-sm font-bold truncate">Mi Nueva Alianza</span>
-                        <span class="inline-block mt-1 text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold" id="badge-nueva-alianza">0</span>
-                    </button>
-                    <button onclick="selectCourse('ETE 5')" id="btn-ete5" class="course-btn text-left p-3 rounded-xl border-2 transition-all duration-200 focus:outline-none">
-                        <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wide">Curso</span>
-                        <span class="block text-xs md:text-sm font-bold truncate">ETE 5</span>
-                        <span class="inline-block mt-1 text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold" id="badge-ete5">0</span>
-                    </button>
-                    <button onclick="selectCourse('Compartiendo mi fe')" id="btn-compartiendo" class="course-btn text-left p-3 rounded-xl border-2 transition-all duration-200 focus:outline-none">
-                        <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wide">Curso</span>
-                        <span class="block text-xs md:text-sm font-bold truncate">Compartiendo mi fe</span>
-                        <span class="inline-block mt-1 text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold" id="badge-compartiendo">0</span>
-                    </button>
-                    <button onclick="selectCourse('Panorama Bíblico')" id="btn-panorama" class="course-btn text-left p-3 rounded-xl border-2 transition-all duration-200 focus:outline-none">
-                        <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wide">Curso</span>
-                        <span class="block text-xs md:text-sm font-bold truncate">Panorama Bíblico</span>
-                        <span class="inline-block mt-1 text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold" id="badge-panorama">0</span>
-                    </button>
-                </div>
-
-                <!-- Buscador rápido dentro del curso seleccionado -->
-                <div class="relative mb-4">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                        <!-- Icono Buscar (Lupa) -->
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                    </span>
-                    <input type="text" id="search-input" onkeyup="filterStudents()" placeholder="Buscar alumno por nombre..." class="pl-9 pr-4 py-2 w-full text-sm rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all duration-150">
-                </div>
-
-                <!-- Contenedor de la lista de Alumnos -->
-                <div class="flex-1 overflow-y-auto max-h-[350px] border border-slate-100 rounded-xl bg-slate-50/50 p-2" id="students-container">
-                    <!-- Los alumnos se inyectarán de forma dinámica aquí -->
-                </div>
-
-                <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between">
-                    <span>* Los nombres y estados provienen exactamente de la lista original.</span>
-                    <span class="font-medium text-slate-500">Filtrando: <b id="current-course-label" class="text-violet-600 font-bold">Todos</b></span>
-                </div>
-            </div>
-
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Age -->
+          <div>
+            <label for="input-age" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Edad</label>
+            <input type="number" id="input-age" min="1" max="120" placeholder="Ej. 25" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+          <!-- Phone -->
+          <div>
+            <label for="input-phone" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Celular</label>
+            <input type="tel" id="input-phone" placeholder="Ej. 987654321" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
         </div>
 
-    </main>
+        <!-- Course -->
+        <div>
+          <label for="input-course" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Curso *</label>
+          <select id="input-course" required onchange="toggleModalStartDate()" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer">
+            <!-- Dinámico -->
+          </select>
+        </div>
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-slate-200 py-4 px-8 mt-12 text-center text-xs text-slate-400">
-        <p>&copy; 2026 Registro de Asistencias y Alumnos. Datos procesados e integrados de forma segura.</p>
-    </footer>
+        <!-- Start Date (Shown conditionally) -->
+        <div id="modal-start-date-wrapper" class="hidden">
+          <label for="input-start-date" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Fecha de Inicio</label>
+          <input type="date" id="input-start-date" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          <p class="text-[10px] text-amber-600 mt-1">Este curso tiene habilitado el registro de asistencia de clases.</p>
+        </div>
 
-    <script>
-        // Los datos extraídos fielmente de la imagen suministrada (image_70897e.png)
-        // Se omiten las filas vacías que carecen de nombre.
-        const dataset = [
-            { id: 1, name: "Alejandro Cienfuegos", course: "Mi Nueva Alianza Con Dios", attended: true },
-            { id: 2, name: "Alvila Ayala Durán", course: "Mi Nueva Alianza Con Dios", attended: true }, // ACTUALIZADO (Ahora tiene x)
-            { id: 3, name: "América Rueda", course: "Mi Nueva Alianza Con Dios", attended: true },
-            { id: 4, name: "Ana Arteaga", course: "Mi Nueva Alianza Con Dios", attended: false },
-            { id: 5, name: "Andre Velasquez", course: "Mi Nueva Alianza Con Dios", attended: false },
-            { id: 6, name: "Andrea Priscila Bustamante Rom", course: "Mi Nueva Alianza Con Dios", attended: false },
-            { id: 7, name: "Biron Espinal Estela", course: "Mi Nueva Alianza Con Dios", attended: false },
-            { id: 8, name: "Carmen Huaman", course: "ETE 5", attended: false },
-            { id: 9, name: "Charito Hernandez", course: "ETE 5", attended: false },
-            { id: 10, name: "Christian Choquehuanca", course: "Mi Nueva Alianza Con Dios", attended: false },
-            { id: 11, name: "Dalia Egoavil Cuellar", course: "Mi Nueva Alianza Con Dios", attended: false },
-            { id: 12, name: "Danitza Venegas Diaz", course: "Mi Nueva Alianza Con Dios", attended: true },
-            { id: 13, name: "David Meneses", course: "ETE 5", attended: false },
-            { id: 14, name: "Eduardo Martinez Torres", course: "Compartiendo mi fe", attended: false },
-            { id: 15, name: "Elizabeth Vicente Ramos", course: "Compartiendo mi fe", attended: false },
-            { id: 16, name: "Fiorella Silvera Llufire", course: "Panorama Bíblico", attended: false },
-            { id: 17, name: "Ismael Diaz León", course: "ETE 5", attended: false },
-            { id: 18, name: "Jacqueline Yacñac", course: "Mi Nueva Alianza Con Dios", attended: false },
-            { id: 19, name: "Javier Mayorga", course: "Mi Nueva Alianza Con Dios", attended: true },
-            { id: 20, name: "Jesenia Neira", course: "Mi Nueva Alianza Con Dios", attended: false },
-            { id: 21, name: "Jorge Santos", course: "Mi Nueva Alianza Con Dios", attended: true },
-            { id: 22, name: "José Villavicencio", course: "ETE 5", attended: false },
-            { id: 23, name: "Julio Quispe", course: "ETE 5", attended: false },
-            { id: 24, name: "Luis Cienfuegos", course: "ETE 5", attended: false },
-            { id: 25, name: "Luisa Rojas Diaz", course: "Mi Nueva Alianza Con Dios", attended: false },
-            { id: 26, name: "Mabel Arias", course: "Mi Nueva Alianza Con Dios", attended: true },
-            { id: 27, name: "Maria Tineo", course: "ETE 5", attended: false },
-            { id: 28, name: "Maritza Mnedoza", course: "Panorama Bíblico", attended: false },
-            { id: 29, name: "Marquez Jeanette", course: "Mi Nueva Alianza Con Dios", attended: true },
-            { id: 30, name: "Merly Mori Santillán", course: "Mi Nueva Alianza Con Dios", attended: false },
-            { id: 31, name: "Milagros Salas", course: "Mi Nueva Alianza Con Dios", attended: true },
-            { id: 32, name: "Mishelle Viera Flores", course: "Mi Nueva Alianza Con Dios", attended: true },
-            { id: 33, name: "Nicollete Paniagua", course: "ETE 5", attended: false },
-            { id: 34, name: "Ruby Crispin", course: "ETE 5", attended: false },
-            { id: 35, name: "Stefano Cuya Salcedo", course: "Mi Nueva Alianza Con Dios", attended: true },
-            { id: 36, name: "Stephany Chiroque", course: "Panorama Bíblico", attended: false },
-            { id: 37, name: "Victoria Moreno", course: "ETE 5", attended: false },
-            { id: 38, name: "Ximena Mendoza Rojas", course: "Mi Nueva Alianza Con Dios", attended: true },
-            { id: 39, name: "Yolanda Farfan", course: "Mi Nueva Alianza Con Dios", attended: false },
-            { id: 40, name: "Yudith Loja Diaz", course: "ETE 5", attended: false }
-        ];
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <button type="button" onclick="closeNewStudentModal()" class="px-4 py-2 rounded-xl text-slate-500 text-sm font-medium hover:bg-slate-100 transition">Cancelar</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold transition shadow-md">Inscribir Alumno</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-        let selectedCourse = 'Mi Nueva Alianza Con Dios'; // Por defecto iniciamos mostrando este
-        let myChart1, myChart2;
+  <!-- Custom Confirm Modal (Replacing standard window.confirm) -->
+  <div id="confirm-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-sm shadow-xl border border-slate-100 overflow-hidden transform transition-all p-6 space-y-4">
+      <div class="flex items-center gap-3 text-amber-500">
+        <div class="bg-amber-50 p-2.5 rounded-xl text-amber-600">
+          <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+        </div>
+        <h3 id="confirm-title" class="font-bold text-base text-slate-800">¿Estás seguro?</h3>
+      </div>
+      <p id="confirm-message" class="text-xs text-slate-500 leading-relaxed">Esta acción no se puede deshacer y modificará el registro local.</p>
+      <div class="flex justify-end gap-3 pt-2">
+        <button id="confirm-cancel-btn" type="button" class="px-4 py-2 rounded-xl text-slate-500 text-sm font-medium hover:bg-slate-100 transition">Cancelar</button>
+        <button id="confirm-ok-btn" type="button" class="px-4 py-2 rounded-xl text-white text-sm font-semibold transition shadow-md">Confirmar</button>
+      </div>
+    </div>
+  </div>
 
-        // Al iniciar la ventana
-        window.onload = function() {
-            initBadges();
-            selectCourse('Mi Nueva Alianza Con Dios');
-            renderCharts();
-        };
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-10 opacity-0 transition-all duration-300 pointer-events-none bg-slate-900 text-white py-3 px-5 rounded-2xl shadow-xl flex items-center gap-2.5">
+    <div id="toast-icon-wrapper" class="p-1 rounded-lg text-emerald-400 bg-white/10">
+      <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+    </div>
+    <span id="toast-message" class="text-xs font-medium">Operación completada</span>
+  </div>
 
-        // Rellenar las insignias de conteo en los botones
-        function initBadges() {
-            const counts = {};
-            dataset.forEach(student => {
-                counts[student.course] = (counts[student.course] || 0) + 1;
-            });
-            
-            document.getElementById('badge-nueva-alianza').textContent = counts['Mi Nueva Alianza Con Dios'] || 0;
-            document.getElementById('badge-ete5').textContent = counts['ETE 5'] || 0;
-            document.getElementById('badge-compartiendo').textContent = counts['Compartiendo mi fe'] || 0;
-            document.getElementById('badge-panorama').textContent = counts['Panorama Bíblico'] || 0;
-            document.getElementById('total-inscritos').textContent = dataset.length;
+  <footer class="bg-slate-100 border-t border-slate-200 text-center py-6 text-xs text-slate-400 mt-auto">
+    <p>© 2026 Panel Académico Alianza. Datos sincronizados con la captura image_f122f2.png.</p>
+  </footer>
+
+  <!-- -->
+  <script>
+    // Base de datos de estudiantes corregida de forma absoluta según la imagen image_f122f2.png
+    const ORIGINAL_DATASET = [
+      { id: 1, name: "Andrea Priscila Bustamante Romero", phone: "975800906", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "", attendance: [] },
+      { id: 2, name: "Stefanny Rosa Celinda Pacherres Landeo", phone: "934753277", age: "", course: "ETE 5 - Miércoles 7:30pm (Quinto piso)", startDate: "", attendance: [] },
+      { id: 3, name: "Danna Vasquez Munguia", phone: "9314261925", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "", attendance: [] },
+      { id: 4, name: "Ana Arteaga", phone: "916299083", age: "", course: "Mi Alianza Con Dios", startDate: "", attendance: [] },
+      { id: 5, name: "Alvila Ayala Durán", phone: "981275986", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "28/06/2026", attendance: [true, false] },
+      { id: 6, name: "José Villavicencio", phone: "995959385", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 7, name: "Maritza Mnedoza", phone: "918159628", age: "", course: "Panorama Bíblico", startDate: "", attendance: [] },
+      { id: 8, name: "David Meneses", phone: "931717336", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 9, name: "Carmen Huaman", phone: "953441065", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 10, name: "Jacqueline Yacñac", phone: "969422916", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "05/07/2026", attendance: [false, true] },
+      { id: 11, name: "Fiorella Silvera Llufire", phone: "990991878", age: "", course: "Panorama Bíblico", startDate: "", attendance: [] },
+      { id: 12, name: "Stephany Chiroque", phone: "913639380", age: "", course: "Panorama Bíblico", startDate: "", attendance: [] },
+      { id: 13, name: "Luis Cienfuegos Aliaga", phone: "951367828", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 14, name: "Biron Espinal Estela", phone: "933973931", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "05/07/2026", attendance: [false, true] },
+      { id: 15, name: "Victoria Moreno", phone: "996595791", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 16, name: "Merly Mori Santillán", phone: "", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "05/07/2026", attendance: [false, true] },
+      { id: 17, name: "Elizabeth Vicente Ramos", phone: "969496363", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 18, name: "Maria Tineo Rivas", phone: "943483636", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 19, name: "Ismael Diaz León", phone: "962562647", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 20, name: "Yudith Loja Diaz", phone: "916667466", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 21, name: "Charito Hernandez Linares", phone: "", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 22, name: "Nicollete Paniagua", phone: "987629512", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 23, name: "Eduardo Martinez Torres", phone: "986538496", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 24, name: "Ruby Crispin", phone: "959010788", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 25, name: "Julio Quispe", phone: "980489583", age: "", course: "ETE 5 - Miércoles 7:30pm (Quinto piso)", startDate: "", attendance: [] },
+      { id: 26, name: "Stefano Cuya Salcedo", phone: "948402071", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 8:30am (Cuarto piso)", startDate: "28/06/2026", attendance: [true, false] },
+      { id: 27, name: "Mishelle Viera Flores", phone: "973392015", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 8:30am (Cuarto piso)", startDate: "28/06/2026", attendance: [true, false] },
+      { id: 28, name: "Milagros Salas", phone: "940121530", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 8:30am (Cuarto piso)", startDate: "28/06/2026", attendance: [true, true] },
+      { id: 29, name: "Jeanette Marquez", phone: "973798747", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 8:30am (Cuarto piso)", startDate: "28/06/2026", attendance: [true, true] },
+      { id: 30, name: "Danitza Venegas Diaz", phone: "935212355", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 8:30am (Cuarto piso)", startDate: "28/06/2026", attendance: [true, true] },
+      { id: 31, name: "Flor Rosales", phone: "965383391", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 32, name: "Carmen Luz", phone: "998466792", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 33, name: "Maria Fernanda Urrutia Cornejo", phone: "922114412", age: "", course: "Panorama Bíblico", startDate: "", attendance: [] },
+      { id: 34, name: "Maria Cueva Guimaray", phone: "993297018", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 35, name: "Raiza Reaño Aguilar", phone: "944964004", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 36, name: "Stefhany Meneses Mendoza", phone: "916634742", age: "30", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 37, name: "Josse Rodríguez Colmenares", phone: "970472206", age: "35", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 38, name: "Luis Vera", phone: "", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 8:30am (Cuarto piso)", startDate: "05/07/2026", attendance: [false, true] },
+      { id: 39, name: "Rita Flores", phone: "", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 8:30am (Cuarto piso)", startDate: "05/07/2026", attendance: [false, true] },
+      { id: 40, name: "Maricruz Cabana", phone: "", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 8:30am (Cuarto piso)", startDate: "05/07/2026", attendance: [false, true] },
+      { id: 41, name: "Luci Ventura Quispe", phone: "", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "05/07/2026", attendance: [false, true] },
+      { id: 42, name: "Alondra Surco Silva", phone: "", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "05/07/2026", attendance: [false, true] },
+      { id: 43, name: "Maria Perez", phone: "937083463", age: "33", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "05/07/2026", attendance: [false, true] },
+      { id: 44, name: "Andre Velasquez", phone: "", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 8:30am (Cuarto piso)", startDate: "05/07/2026", attendance: [false, true] },
+      { id: 45, name: "Yesenia Neyra", phone: "", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 8:30am (Cuarto piso)", startDate: "05/07/2026", attendance: [false, true] },
+      { id: 46, name: "América Rueda", phone: "", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "28/06/2026", attendance: [true, true] },
+      { id: 47, name: "Yolanda Farfan", phone: "", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "05/07/2026", attendance: [false, true] },
+      { id: 48, name: "Jorge Santos", phone: "", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "05/07/2026", attendance: [true, false] },
+      { id: 49, name: "Alejandro Cienfuegos", phone: "", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "05/07/2026", attendance: [true, true] },
+      { id: 50, name: "Mabel Arias", phone: "", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "05/07/2026", attendance: [true, true] },
+      { id: 51, name: "Christian Choquehuanca", phone: "", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "", attendance: [] },
+      { id: 52, name: "Javier Mayorga", phone: "", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "28/06/2026", attendance: [true, false] },
+      { id: 53, name: "Ximena Mendoza Rojas", phone: "", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "28/06/2026", attendance: [true, true] },
+      { id: 54, name: "Luisa Rojas Diaz", phone: "", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "28/06/2026", attendance: [true, true] },
+      { id: 55, name: "Dalia Egoavil Cuellar", phone: "", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "", attendance: [] },
+      { id: 56, name: "Sandra Roman Huachohuillca", phone: "947790654", age: "", course: "ETE 5 - Miércoles 7:30pm (Primer piso)", startDate: "", attendance: [] },
+      { id: 57, name: "Joselyn mirella espinoza de ipenza", phone: "989869985", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 58, name: "Francesca Zegarra Molina", phone: "980642447", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "", attendance: [] },
+      { id: 59, name: "Rocio Peláez", phone: "924637247", age: "", course: "ETE 5 - Miércoles 7:30pm (Quinto piso)", startDate: "", attendance: [] },
+      { id: 60, name: "Geraldine Sofia Zapata De La Cruz", phone: "987744522", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 61, name: "Daira Orozco Evangelista", phone: "915115034", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 62, name: "Joaquín Pacherres Navarro", phone: "978027475", age: "", course: "ETE 5 - Miércoles 7:30pm (Primer piso)", startDate: "", attendance: [] },
+      { id: 63, name: "Seltha Nancy Gálvez Revolo", phone: "993155344", age: "", course: "ETE 5 - Miércoles 7:30pm (Primer piso)", startDate: "", attendance: [] },
+      { id: 64, name: "Patricia Mariana Cotaquispe Asto", phone: "988894641", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 65, name: "July Silva Zevallos", phone: "991747243", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 66, name: "Sonia Nelly Gonzales Salas", phone: "977279058", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 67, name: "Daniela Encizo", phone: "987357627", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 68, name: "Patricia Gongora", phone: "945684409", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "", attendance: [] },
+      { id: 69, name: "Nicolás Huamán", phone: "904654370", age: "16", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "", attendance: [] },
+      { id: 70, name: "Rosa Aquino", phone: "925865494", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "", attendance: [] },
+      { id: 71, name: "Jonathan Huaman", phone: "", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 72, name: "David Meneses", phone: "", age: "", course: "Panorama Bíblico", startDate: "", attendance: [] },
+      { id: 73, name: "Glenda Meza Arteaga", phone: "", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 74, name: "Ernestina Asto", phone: "", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 75, name: "Patricia Cornejo", phone: "", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 76, name: "Cludes Panebra", phone: "", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 77, name: "Maria Jara", phone: "", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 78, name: "Kenberlin Ibeth Navarro Delgadillo", phone: "943263124", age: "25", course: "ETE 5 - Miércoles 7:30pm (Quinto piso)", startDate: "", attendance: [] },
+      { id: 79, name: "Silvia Tenorio Gómez", phone: "994642708", age: "41", course: "ETE 5 - Miércoles 7:30pm (Quinto piso)", startDate: "", attendance: [] }
+    ];
+
+    const SPECIAL_COURSES = [
+      "Mi Nueva Alianza Con Dios - Domingos 8:30am (Cuarto piso)",
+      "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)"
+    ];
+
+    let students = [];
+    let chartInstance = null;
+    let mnaChartInstance = null;
+    let confirmCallback = null;
+
+    window.onload = function() {
+      // Usar versión "v3" de almacenamiento local para garantizar la carga del campo edad de la imagen_f122f2.png
+      const storedVersion = localStorage.getItem("alianza_db_version");
+      
+      if (localStorage.getItem("alianza_students") && storedVersion === "v3") {
+        students = JSON.parse(localStorage.getItem("alianza_students"));
+      } else {
+        students = JSON.parse(JSON.stringify(ORIGINAL_DATASET));
+        localStorage.setItem("alianza_db_version", "v3");
+        saveToLocalStorage();
+      }
+      
+      initSelectors();
+      updateDashboard();
+      lucide.createIcons();
+    };
+
+    function saveToLocalStorage() {
+      localStorage.setItem("alianza_students", JSON.stringify(students));
+    }
+
+    function initSelectors() {
+      const courses = getUniqueCourses();
+      const courseSelector = document.getElementById("course-selector");
+      const inputCourse = document.getElementById("input-course");
+
+      // Limpiar selectores
+      courseSelector.innerHTML = "";
+      inputCourse.innerHTML = "";
+
+      let topCourse = getTopCourseName();
+      
+      courses.forEach(c => {
+        const option1 = document.createElement("option");
+        option1.value = c;
+        option1.textContent = c;
+        if (c === topCourse) option1.selected = true;
+        courseSelector.appendChild(option1);
+
+        const option2 = document.createElement("option");
+        option2.value = c;
+        option2.textContent = c;
+        inputCourse.appendChild(option2);
+      });
+
+      toggleModalStartDate();
+    }
+
+    function getUniqueCourses() {
+      const coursesSet = new Set();
+      students.forEach(s => {
+        if (s.course) coursesSet.add(s.course);
+      });
+      // Asegurar que existan todos los cursos de la imagen
+      const defaultCourses = [
+        "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)",
+        "Mi Nueva Alianza Con Dios - Domingos 8:30am (Cuarto piso)",
+        "ETE 5 - Miércoles 7:30pm (Quinto piso)",
+        "ETE 5 - Miércoles 7:30pm (Primer piso)",
+        "ETE 5",
+        "Mi Alianza Con Dios",
+        "Panorama Bíblico",
+        "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)"
+      ];
+      defaultCourses.forEach(c => coursesSet.add(c));
+      return Array.from(coursesSet).sort();
+    }
+
+    function getTopCourseName() {
+      const counts = getEnrollmentCounts();
+      let topName = "Ninguno";
+      let maxVal = -1;
+      for (const [key, value] of Object.entries(counts)) {
+        if (value > maxVal) {
+          maxVal = value;
+          topName = key;
+        }
+      }
+      return topName;
+    }
+
+    function getEnrollmentCounts() {
+      const counts = {};
+      students.forEach(s => {
+        if (!counts[s.course]) {
+          counts[s.course] = 0;
+        }
+        counts[s.course]++;
+      });
+      return counts;
+    }
+
+    function showCustomConfirm(title, message, onConfirm, isDanger = true) {
+      document.getElementById("confirm-title").textContent = title;
+      document.getElementById("confirm-message").textContent = message;
+      
+      const okBtn = document.getElementById("confirm-ok-btn");
+      if (isDanger) {
+        okBtn.className = "px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-sm font-semibold transition shadow-md";
+      } else {
+        okBtn.className = "px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold transition shadow-md";
+      }
+      
+      confirmCallback = onConfirm;
+      document.getElementById("confirm-modal").classList.remove("hidden");
+    }
+
+    document.getElementById("confirm-cancel-btn").onclick = function() {
+      document.getElementById("confirm-modal").classList.add("hidden");
+      confirmCallback = null;
+    };
+
+    document.getElementById("confirm-ok-btn").onclick = function() {
+      if (confirmCallback) confirmCallback();
+      document.getElementById("confirm-modal").classList.add("hidden");
+      confirmCallback = null;
+    };
+
+    function updateDashboard() {
+      const totalStudents = students.length;
+      const uniqueCourses = getUniqueCourses().length;
+      
+      document.getElementById("stat-total-students").textContent = totalStudents;
+      document.getElementById("stat-total-courses").textContent = uniqueCourses;
+
+      const topCourseName = getTopCourseName();
+      const topCourseCount = getEnrollmentCounts()[topCourseName] || 0;
+      document.getElementById("stat-top-course").textContent = `${topCourseName} (${topCourseCount})`;
+      document.getElementById("stat-top-course").title = topCourseName;
+
+      // Calcular promedio de asistencia general para los cursos especiales (Clases 1 a 17)
+      const specialStudents = students.filter(s => SPECIAL_COURSES.includes(s.course));
+      let totalAttendanceSpots = specialStudents.length * 17;
+      let checkedAsis = 0;
+      specialStudents.forEach(s => {
+        if (s.attendance && s.attendance.length) {
+          s.attendance.forEach(as => {
+            if (as === true) checkedAsis++;
+          });
+        }
+      });
+
+      const avgAttendancePercent = totalAttendanceSpots > 0 ? Math.round((checkedAsis / totalAttendanceSpots) * 100) : 0;
+      document.getElementById("stat-avg-attendance").textContent = `${avgAttendancePercent}%`;
+
+      // Métricas específicas "Mi Nueva Alianza"
+      const morningCount = students.filter(s => s.course === SPECIAL_COURSES[0]).length;
+      const lateCount = students.filter(s => s.course === SPECIAL_COURSES[1]).length;
+      const mnaTotal = morningCount + lateCount;
+
+      document.getElementById("mna-morning-count").textContent = morningCount;
+      document.getElementById("mna-late-count").textContent = lateCount;
+      document.getElementById("mna-total-count").textContent = mnaTotal;
+
+      const maxPossibleMNA = Math.max(morningCount, lateCount, 15);
+      document.getElementById("mna-morning-progress").style.width = `${Math.min((morningCount / maxPossibleMNA) * 100, 100)}%`;
+      document.getElementById("mna-late-progress").style.width = `${Math.min((lateCount / maxPossibleMNA) * 100, 100)}%`;
+
+      // Contador de alumnos con edad registrada
+      const withAgeCount = students.filter(s => s.age !== undefined && s.age !== null && s.age !== "").length;
+      document.getElementById("stat-with-age").textContent = `${withAgeCount} alumnos`;
+
+      renderCharts();
+      renderStudentList();
+    }
+
+    function renderStudentList() {
+      const selectedCourse = document.getElementById("course-selector").value;
+      const searchQuery = document.getElementById("search-student").value.toLowerCase();
+      const isSpecial = SPECIAL_COURSES.includes(selectedCourse);
+
+      const thStartDate = document.getElementById("th-start-date");
+      const thClasses = document.getElementById("th-classes");
+      const banner = document.getElementById("special-banner");
+
+      if (isSpecial) {
+        thStartDate.classList.remove("hidden");
+        thClasses.classList.remove("hidden");
+        banner.classList.remove("hidden");
+      } else {
+        thStartDate.classList.add("hidden");
+        thClasses.classList.add("hidden");
+        banner.classList.add("hidden");
+      }
+
+      let filtered = students.filter(s => s.course === selectedCourse);
+
+      if (searchQuery) {
+        filtered = filtered.filter(s => 
+          s.name.toLowerCase().includes(searchQuery) || 
+          (s.phone && s.phone.includes(searchQuery)) ||
+          (s.age && s.age.toString().includes(searchQuery))
+        );
+      }
+
+      // Ordenar alfabéticamente de la A a la Z
+      filtered.sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+
+      const tbody = document.getElementById("student-table-body");
+      const emptyState = document.getElementById("empty-state");
+      
+      tbody.innerHTML = "";
+
+      if (filtered.length === 0) {
+        emptyState.classList.remove("hidden");
+        emptyState.classList.add("flex");
+        return;
+      } else {
+        emptyState.classList.remove("flex");
+        emptyState.classList.add("hidden");
+      }
+
+      filtered.forEach((student, index) => {
+        const row = document.createElement("tr");
+        row.className = "hover:bg-slate-50/80 transition duration-150 border-b border-slate-100";
+
+        const tdIndex = document.createElement("td");
+        tdIndex.className = "py-3.5 px-5 text-center font-medium text-slate-400";
+        tdIndex.textContent = index + 1;
+        row.appendChild(tdIndex);
+
+        const tdName = document.createElement("td");
+        tdName.className = "py-3.5 px-4 font-semibold text-slate-800";
+        tdName.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs uppercase shadow-sm">
+              ${student.name.charAt(0)}
+            </span>
+            <div class="flex flex-col">
+              <span class="leading-snug">${student.name}</span>
+              ${student.course.includes("Nueva Alianza") ? '<span class="text-[10px] text-indigo-500 font-semibold uppercase tracking-wider">Programa Alianza</span>' : ''}
+            </div>
+          </div>
+        `;
+        row.appendChild(tdName);
+
+        // Edad Column
+        const tdAge = document.createElement("td");
+        tdAge.className = "py-3.5 px-4 text-center";
+        if (student.age) {
+          tdAge.innerHTML = `<span class="bg-indigo-50 text-indigo-700 text-xs font-bold px-2 py-1 rounded-lg">${student.age} años</span>`;
+        } else {
+          tdAge.innerHTML = `<span class="text-slate-300">—</span>`;
+        }
+        row.appendChild(tdAge);
+
+        const tdPhone = document.createElement("td");
+        tdPhone.className = "py-3.5 px-4 text-slate-500 font-medium";
+        tdPhone.textContent = student.phone ? student.phone : "—";
+        row.appendChild(tdPhone);
+
+        if (isSpecial) {
+          const tdDate = document.createElement("td");
+          tdDate.className = "py-3.5 px-4";
+          
+          let formattedDate = student.startDate || "—";
+          if (formattedDate.includes("-")) {
+            const parts = formattedDate.split("-");
+            formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+          }
+
+          tdDate.innerHTML = `
+            <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-100 py-1.5 px-3 rounded-xl w-max">
+              <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span>${formattedDate}</span>
+            </div>
+          `;
+          row.appendChild(tdDate);
+
+          const tdClasses = document.createElement("td");
+          tdClasses.className = "py-3.5 px-4";
+          
+          const grid = document.createElement("div");
+          grid.className = "flex items-center gap-1 overflow-x-auto py-1 max-w-[480px]";
+
+          for (let c = 0; c < 17; c++) {
+            const isAttended = student.attendance && student.attendance[c] === true;
+            const classBtn = document.createElement("button");
+            classBtn.type = "button";
+            classBtn.onclick = () => toggleAttendance(student.id, c);
+            classBtn.title = `Clase ${c + 1}: ${isAttended ? 'Presente' : 'Ausente'}`;
+            classBtn.className = `w-7 h-7 flex-shrink-0 text-[10px] font-bold rounded-lg border flex items-center justify-center transition-all focus:outline-none ${
+              isAttended 
+              ? 'bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600 active:scale-95 shadow-sm' 
+              : 'bg-slate-100 hover:bg-slate-200 text-slate-400 border-slate-200 active:scale-95'
+            }`;
+            classBtn.textContent = `${c + 1}`;
+            grid.appendChild(classBtn);
+          }
+
+          tdClasses.appendChild(grid);
+          row.appendChild(tdClasses);
         }
 
-        // Selección de curso activa
-        function selectCourse(courseName) {
-            selectedCourse = courseName;
-            document.getElementById('current-course-label').textContent = courseName;
-            document.getElementById('search-input').value = ''; // Limpiar buscador
+        const tdActions = document.createElement("td");
+        tdActions.className = "py-3.5 px-4 text-center";
+        tdActions.innerHTML = `
+          <button onclick="confirmDelete(${student.id})" class="text-rose-500 hover:bg-rose-50 p-2 rounded-xl transition inline-flex items-center justify-center" title="Eliminar Alumno">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        `;
+        row.appendChild(tdActions);
 
-            // Actualizar diseño de botones
-            const buttonMap = {
-                'Mi Nueva Alianza Con Dios': { id: 'btn-nueva-alianza', active: 'border-violet-600 bg-violet-50/50 text-violet-900', normal: 'border-slate-200 bg-white hover:bg-slate-50' },
-                'ETE 5': { id: 'btn-ete5', active: 'border-indigo-600 bg-indigo-50/50 text-indigo-900', normal: 'border-slate-200 bg-white hover:bg-slate-50' },
-                'Compartiendo mi fe': { id: 'btn-compartiendo', active: 'border-emerald-600 bg-emerald-50/50 text-emerald-900', normal: 'border-slate-200 bg-white hover:bg-slate-50' },
-                'Panorama Bíblico': { id: 'btn-panorama', active: 'border-amber-600 bg-amber-50/50 text-amber-900', normal: 'border-slate-200 bg-white hover:bg-slate-50' }
-            };
+        tbody.appendChild(row);
+      });
 
-            Object.keys(buttonMap).forEach(key => {
-                const btn = document.getElementById(buttonMap[key].id);
-                if (key === courseName) {
-                    btn.className = `course-btn text-left p-3 rounded-xl border-2 transition-all duration-200 focus:outline-none ${buttonMap[key].active}`;
-                } else {
-                    btn.className = `course-btn text-left p-3 rounded-xl border-2 transition-all duration-200 focus:outline-none ${buttonMap[key].normal}`;
-                }
-            });
+      lucide.createIcons();
+    }
 
-            renderStudents();
-        }
+    function renderCharts() {
+      const counts = getEnrollmentCounts();
+      const labels = Object.keys(counts);
+      const dataValues = Object.values(counts);
 
-        // Mostrar los alumnos correspondientes al curso y el buscador
-        function renderStudents() {
-            const container = document.getElementById('students-container');
-            const query = document.getElementById('search-input').value.toLowerCase().trim();
-            
-            // Filtrar datos
-            const filtered = dataset.filter(student => 
-                student.course === selectedCourse && 
-                student.name.toLowerCase().includes(query)
-            );
+      const ctxEnrollments = document.getElementById('chart-courses').getContext('2d');
+      const ctxMnaAttendance = document.getElementById('chart-mna-attendance').getContext('2d');
 
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center py-12 text-center text-slate-400">
-                        <svg class="h-10 w-10 mb-2 stroke-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <p class="text-sm font-semibold">No se encontraron inscritos</p>
-                        <p class="text-xs">Prueba escribiendo otro nombre o criterio.</p>
-                    </div>
-                `;
-                return;
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      const barColors = [
+        'rgba(79, 70, 229, 0.85)',   // Indigo
+        'rgba(236, 72, 153, 0.85)',  // Pink
+        'rgba(16, 185, 129, 0.85)',  // Emerald
+        'rgba(245, 158, 11, 0.85)',  // Amber
+        'rgba(14, 165, 233, 0.85)',  // Sky Blue
+        'rgba(139, 92, 246, 0.85)'   // Purple
+      ];
+
+      const borderColors = [
+        '#4f46e5', '#ec4899', '#10b981', '#f59e0b', '#0ea5e9', '#8b5cf6'
+      ];
+
+      chartInstance = new Chart(ctxEnrollments, {
+        type: 'bar',
+        data: {
+          labels: labels.map(label => {
+            return label.length > 20 ? label.substring(0, 20) + '...' : label;
+          }),
+          datasets: [{
+            label: 'Alumnos',
+            data: dataValues,
+            backgroundColor: barColors.slice(0, labels.length),
+            borderColor: borderColors.slice(0, labels.length),
+            borderWidth: 1.5,
+            borderRadius: 6,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1e293b',
+              titleFont: { size: 11, weight: 'bold', family: 'Inter' },
+              bodyFont: { size: 11, family: 'Inter' },
+              padding: 10,
+              callbacks: {
+                title: function(context) { return labels[context[0].dataIndex]; }
+              }
             }
-
-            container.innerHTML = filtered.map(student => {
-                const attendedText = student.attended 
-                    ? '<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100 flex items-center gap-1">✓ Asistió (X en tabla)</span>' 
-                    : '<span class="text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1">Sin asistencia</span>';
-
-                return `
-                    <div class="flex items-center justify-between p-3 mb-2 bg-white rounded-xl shadow-sm border border-slate-100/80 transition-all hover:translate-x-1 duration-150">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs uppercase ${student.attended ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">
-                                ${student.name.charAt(0)}
-                            </div>
-                            <div>
-                                <span class="font-semibold text-sm text-slate-700 block leading-tight">${student.name}</span>
-                                <span class="text-[10px] text-slate-400 block mt-0.5">${student.course}</span>
-                            </div>
-                        </div>
-                        <div>
-                            ${attendedText}
-                        </div>
-                    </div>
-                `;
-            }).join('');
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { precision: 0, font: { family: 'Inter', size: 10 } },
+              grid: { color: '#f1f5f9' }
+            },
+            x: {
+              ticks: { font: { family: 'Inter', size: 9 }, maxRotation: 45, minRotation: 0 },
+              grid: { display: false }
+            }
+          }
         }
+      });
 
-        // Función para disparar en tiempo real la búsqueda
-        // Para asegurar adaptabilidad móvil, se enlaza directamente al evento 'keyup' y 'input'
-        function filterStudents() {
-            renderStudents();
+      if (mnaChartInstance) {
+        mnaChartInstance.destroy();
+      }
+
+      // Calcular conteos reales acumulados de asistencia por clase (1-17)
+      const specialStudents = students.filter(s => SPECIAL_COURSES.includes(s.course));
+      const mnaAttendanceData = Array(17).fill(0);
+
+      specialStudents.forEach(s => {
+        if (s.attendance) {
+          for (let c = 0; c < 17; c++) {
+            if (s.attendance[c] === true) {
+              mnaAttendanceData[c]++;
+            }
+          }
         }
+      });
 
-        // Inicializar y renderizar los gráficos de Chart.js
-        function renderCharts() {
-            // Datos del Gráfico 1 (Inscritos por curso)
-            const ctx1 = document.getElementById('chartCursos').getContext('2d');
-            myChart1 = new Chart(ctx1, {
-                type: 'bar',
-                data: {
-                    labels: ['Mi Nueva Alianza', 'ETE 5', 'Panorama Bíblico', 'Compartiendo mi fe'],
-                    datasets: [{
-                        label: 'Número de Alumnos Matriculados',
-                        data: [23, 12, 3, 2],
-                        backgroundColor: [
-                            'rgba(124, 58, 237, 0.85)', // Violeta
-                            'rgba(79, 70, 229, 0.85)',  // Indigo
-                            'rgba(245, 158, 11, 0.85)', // Ámbar
-                            'rgba(16, 185, 129, 0.85)'  // Esmeralda
-                        ],
-                        borderColor: [
-                            '#7c3aed',
-                            '#4f46e5',
-                            '#f59e0b',
-                            '#10b981'
-                        ],
-                        borderWidth: 1.5,
-                        borderRadius: 8,
-                        borderSkipped: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            padding: 12,
-                            backgroundColor: '#1e293b',
-                            titleFont: { size: 13, weight: 'bold' },
-                            bodyFont: { size: 12 }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: '#f1f5f9'
-                            },
-                            ticks: {
-                                font: { size: 11 }
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                font: { size: 11, weight: 'bold' }
-                            }
-                        }
-                    }
-                }
-            });
+      const classesLabels = Array.from({ length: 17 }, (_, i) => `C${i + 1}`);
 
-            // Datos del Gráfico 2 (Asistencia de Mi Nueva Alianza Con Dios)
-            // 12 Alumnos con X (Asistieron)
-            // 11 Alumnos en blanco (No asistieron)
-            const ctx2 = document.getElementById('chartAsistencia').getContext('2d');
-            myChart2 = new Chart(ctx2, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Asistió (X)', 'No asistió'],
-                    datasets: [{
-                        data: [12, 11], // Actualizado a 12 de asistencia con Alvila Ayala Durán
-                        backgroundColor: [
-                            '#10b981', // Verde Esmeralda
-                            '#cbd5e1'  // Gris Slate
-                        ],
-                        hoverOffset: 4,
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            padding: 12,
-                            backgroundColor: '#1e293b',
-                            titleFont: { size: 13, weight: 'bold' },
-                            bodyFont: { size: 12 },
-                            callbacks: {
-                                label: function(context) {
-                                    const value = context.raw;
-                                    const total = 23;
-                                    const percentage = ((value / total) * 100).toFixed(1);
-                                    return ` Alumnos: ${value} (${percentage}%)`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
+      const fillGradient = ctxMnaAttendance.createLinearGradient(0, 0, 0, 200);
+      fillGradient.addColorStop(0, 'rgba(99, 102, 241, 0.45)');
+      fillGradient.addColorStop(1, 'rgba(99, 102, 241, 0.00)');
+
+      mnaChartInstance = new Chart(ctxMnaAttendance, {
+        type: 'line',
+        data: {
+          labels: classesLabels,
+          datasets: [{
+            label: 'Asistentes',
+            data: mnaAttendanceData,
+            borderColor: '#6366f1',
+            borderWidth: 2.5,
+            backgroundColor: fillGradient,
+            fill: true,
+            tension: 0.35,
+            pointBackgroundColor: '#4f46e5',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 1.5,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1e293b',
+              titleFont: { size: 11, weight: 'bold', family: 'Inter' },
+              bodyFont: { size: 11, family: 'Inter' },
+              padding: 10,
+              callbacks: {
+                title: function(context) { return `Clase ${context[0].dataIndex + 1}`; }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { precision: 0, font: { family: 'Inter', size: 10 } },
+              grid: { color: '#f1f5f9' }
+            },
+            x: {
+              ticks: { font: { family: 'Inter', size: 9 } },
+              grid: { display: false }
+            }
+          }
         }
-    </script>
+      });
+    }
+
+    function toggleAttendance(studentId, classIndex) {
+      const studentIndex = students.findIndex(s => s.id === studentId);
+      if (studentIndex !== -1) {
+        let att = students[studentIndex].attendance || [];
+        while (att.length < 17) {
+          att.push(false);
+        }
+        att[classIndex] = !att[classIndex];
+        students[studentIndex].attendance = att;
+        
+        saveToLocalStorage();
+        updateDashboard();
+        showToast("Asistencia modificada con éxito");
+      }
+    }
+
+    function handleCourseChange() {
+      renderStudentList();
+    }
+
+    function openNewStudentModal() {
+      const modal = document.getElementById("new-student-modal");
+      modal.classList.remove("hidden");
+      initSelectors();
+      toggleModalStartDate();
+    }
+
+    function closeNewStudentModal() {
+      const modal = document.getElementById("new-student-modal");
+      modal.classList.add("hidden");
+      document.getElementById("new-student-form").reset();
+    }
+
+    function toggleModalStartDate() {
+      const selectedCourse = document.getElementById("input-course").value;
+      const dateWrapper = document.getElementById("modal-start-date-wrapper");
+      
+      if (SPECIAL_COURSES.includes(selectedCourse)) {
+        dateWrapper.classList.remove("hidden");
+      } else {
+        dateWrapper.classList.add("hidden");
+      }
+    }
+
+    function handleNewStudentSubmit(event) {
+      event.preventDefault();
+
+      const name = document.getElementById("input-name").value.trim();
+      const age = document.getElementById("input-age").value.trim();
+      const phone = document.getElementById("input-phone").value.trim();
+      const course = document.getElementById("input-course").value;
+      let startDate = "";
+
+      if (SPECIAL_COURSES.includes(course)) {
+        const rawDate = document.getElementById("input-start-date").value;
+        if (rawDate) {
+          const parts = rawDate.split("-");
+          startDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        } else {
+          const today = new Date();
+          let dd = today.getDate();
+          let mm = today.getMonth() + 1;
+          const yyyy = today.getFullYear();
+          if (dd < 10) dd = '0' + dd;
+          if (mm < 10) mm = '0' + mm;
+          startDate = `${dd}/${mm}/${yyyy}`;
+        }
+      }
+
+      if (!name) return;
+
+      const newId = students.length > 0 ? Math.max(...students.map(s => s.id)) + 1 : 1;
+      
+      let initialAttendance = Array(17).fill(false);
+      if (startDate) {
+        if (startDate === "05/07/2026") {
+          initialAttendance[1] = true; 
+        } else if (startDate === "28/06/2026") {
+          initialAttendance[0] = true; 
+        }
+      }
+
+      const newStudent = {
+        id: newId,
+        name: name,
+        age: age,
+        phone: phone,
+        course: course,
+        startDate: startDate,
+        attendance: initialAttendance
+      };
+
+      students.push(newStudent);
+      saveToLocalStorage();
+      
+      const courseSelector = document.getElementById("course-selector");
+      courseSelector.value = course;
+
+      closeNewStudentModal();
+      updateDashboard();
+      showToast("Alumno inscrito exitosamente");
+    }
+
+    function confirmDelete(id) {
+      const student = students.find(s => s.id === id);
+      if (!student) return;
+
+      showCustomConfirm(
+        "¿Eliminar Alumno?",
+        `¿Estás seguro de que deseas eliminar a "${student.name}" del curso "${student.course}"?`,
+        function() {
+          students = students.filter(s => s.id !== id);
+          saveToLocalStorage();
+          updateDashboard();
+          showToast("Estudiante eliminado de la lista");
+        },
+        true
+      );
+    }
+
+    function confirmRestore() {
+      showCustomConfirm(
+        "Sincronizar Captura",
+        "¿Deseas restablecer y sincronizar los datos locales con la hoja de ruta de la imagen_f122f2.png?",
+        function() {
+          students = JSON.parse(JSON.stringify(ORIGINAL_DATASET));
+          localStorage.setItem("alianza_db_version", "v3");
+          saveToLocalStorage();
+          initSelectors();
+          updateDashboard();
+          showToast("Datos sincronizados con la captura", "info");
+        },
+        false
+      );
+    }
+
+    function showToast(message, type = "success") {
+      const toast = document.getElementById("toast");
+      const msgSpan = document.getElementById("toast-message");
+      const iconWrapper = document.getElementById("toast-icon-wrapper");
+
+      msgSpan.textContent = message;
+
+      if (type === "info") {
+        iconWrapper.className = "p-1 rounded-lg text-indigo-400 bg-white/10";
+        iconWrapper.innerHTML = `<i data-lucide="info" class="w-4 h-4"></i>`;
+      } else {
+        iconWrapper.className = "p-1 rounded-lg text-emerald-400 bg-white/10";
+        iconWrapper.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4"></i>`;
+      }
+      lucide.createIcons();
+
+      toast.classList.remove("opacity-0", "translate-y-10", "pointer-events-none");
+      toast.classList.add("opacity-100", "translate-y-0");
+
+      setTimeout(() => {
+        toast.classList.add("opacity-0", "translate-y-10", "pointer-events-none");
+        toast.classList.remove("opacity-100", "translate-y-0");
+      }, 3000);
+    }
+  </script>
 </body>
 </html>
