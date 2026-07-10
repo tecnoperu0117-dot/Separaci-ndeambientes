@@ -36,7 +36,6 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-  <!-- -->
   <header class="bg-gradient-to-r from-indigo-700 via-indigo-800 to-purple-800 text-white shadow-md sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
       <div class="flex items-center gap-3">
@@ -44,7 +43,7 @@
           <i data-lucide="graduation-cap" class="w-8 h-8 text-indigo-200"></i>
         </div>
         <div>
-          <h1 class="text-2xl font-bold tracking-tight">Gestión Académica v3</h1>
+          <h1 class="text-2xl font-bold tracking-tight">Gestión Académica v4</h1>
           <p class="text-xs text-indigo-200">Control de Inscritos, Estadísticas y Asistencia Activa</p>
         </div>
       </div>
@@ -53,7 +52,7 @@
           <i data-lucide="user-plus" class="w-4 h-4"></i>
           Nuevo Alumno
         </button>
-        <button onclick="confirmRestore()" class="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-xl text-sm font-medium transition border border-white/10" title="Restablecer a la información de la imagen_f122f2.png">
+        <button onclick="confirmRestore()" class="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-xl text-sm font-medium transition border border-white/10" title="Restablecer a la información de la imagen_4387ad.png">
           <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
           Sincronizar Captura
         </button>
@@ -63,7 +62,7 @@
 
   <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
     
-    <!-- -->
+    <!-- Tarjetas de Estadísticas Principales -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex items-center gap-4">
         <div class="bg-indigo-50 text-indigo-600 p-3 rounded-xl">
@@ -106,10 +105,10 @@
       </div>
     </div>
 
-    <!-- -->
+    <!-- Sección de Gráficos y Resumen -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
-      <!-- Course bar chart -->
+      <!-- Gráfico de barras de alumnos inscritos -->
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
@@ -123,7 +122,7 @@
         </div>
       </div>
 
-      <!-- MNA Class Attendance Area/Line Chart -->
+      <!-- Gráfico de Asistencia de Mi Nueva Alianza -->
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
@@ -137,7 +136,7 @@
         </div>
       </div>
 
-      <!-- Quick Metrics/General summary for tracked courses -->
+      <!-- Métricas y Resumen de Alianza & Edades -->
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
         <div>
           <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2 mb-3">
@@ -145,7 +144,7 @@
             Análisis de Alianza & Edades
           </h3>
           <p class="text-[11px] text-slate-500 leading-relaxed mb-4">
-            Distribución de asistencia y de edades según datos integrados de la captura <code class="bg-slate-100 px-1 rounded text-indigo-600">image_f122f2.png</code>.
+            Distribución de asistencia y de edades según datos integrados de la captura <code class="bg-slate-100 px-1 rounded text-indigo-600">image_4387ad.png</code>.
           </p>
 
           <div class="space-y-3">
@@ -191,7 +190,7 @@
       </div>
     </div>
 
-    <!-- -->
+    <!-- Contenedor del Listado e Interacción con Alumnos -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
       <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div class="space-y-1">
@@ -203,17 +202,17 @@
         </div>
         
         <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <!-- Course Selector -->
+          <!-- Selector de Cursos -->
           <div class="relative flex-grow sm:flex-none">
             <select id="course-selector" onchange="handleCourseChange()" class="w-full sm:w-80 pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-medium text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm appearance-none cursor-pointer">
-              <!-- Cursos cargados de forma dinámica -->
+              <!-- Cursos cargados dinámicamente -->
             </select>
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
               <i data-lucide="filter" class="w-4 h-4"></i>
             </div>
           </div>
 
-          <!-- Search Input -->
+          <!-- Buscador de Alumnos -->
           <div class="relative flex-grow sm:flex-none">
             <input type="text" id="search-student" oninput="renderStudentList()" placeholder="Buscar estudiante..." class="w-full sm:w-64 pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -223,7 +222,7 @@
         </div>
       </div>
 
-      <!-- Course info banner -->
+      <!-- Banner Informativo Especial -->
       <div id="special-banner" class="hidden px-5 py-3 bg-gradient-to-r from-amber-50 to-amber-100/50 border-b border-amber-200/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-amber-900">
         <div class="flex items-center gap-2 font-medium">
           <i data-lucide="info" class="w-4 h-4 text-amber-600"></i>
@@ -235,7 +234,7 @@
         </div>
       </div>
 
-      <!-- -->
+      <!-- Tabla de Estudiantes -->
       <div class="overflow-x-auto w-full">
         <table class="w-full text-left border-collapse">
           <thead>
@@ -255,7 +254,7 @@
         </table>
       </div>
 
-      <!-- Empty state -->
+      <!-- Estado Vacío -->
       <div id="empty-state" class="hidden flex-col items-center justify-center p-12 text-center space-y-3">
         <div class="p-4 bg-slate-100 rounded-full text-slate-400">
           <i data-lucide="users-round" class="w-12 h-12"></i>
@@ -266,8 +265,7 @@
     </div>
   </main>
 
-  <!-- -->
-  <!-- New Student Modal -->
+  <!-- Modal de Nuevo Alumno -->
   <div id="new-student-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl w-full max-w-md shadow-xl border border-slate-100 overflow-hidden transform transition-all duration-300">
       <div class="px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white flex justify-between items-center">
@@ -281,26 +279,26 @@
       </div>
 
       <form id="new-student-form" onsubmit="handleNewStudentSubmit(event)" class="p-6 space-y-4">
-        <!-- Name -->
+        <!-- Nombre -->
         <div>
           <label for="input-name" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Nombres y Apellidos *</label>
           <input type="text" id="input-name" required placeholder="Ej. Carlos Mendoza Torres" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
         </div>
 
         <div class="grid grid-cols-2 gap-4">
-          <!-- Age -->
+          <!-- Edad -->
           <div>
             <label for="input-age" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Edad</label>
             <input type="number" id="input-age" min="1" max="120" placeholder="Ej. 25" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
           </div>
-          <!-- Phone -->
+          <!-- Celular -->
           <div>
             <label for="input-phone" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Celular</label>
             <input type="tel" id="input-phone" placeholder="Ej. 987654321" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
           </div>
         </div>
 
-        <!-- Course -->
+        <!-- Curso -->
         <div>
           <label for="input-course" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Curso *</label>
           <select id="input-course" required onchange="toggleModalStartDate()" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer">
@@ -308,7 +306,7 @@
           </select>
         </div>
 
-        <!-- Start Date (Shown conditionally) -->
+        <!-- Fecha de inicio (Condicional) -->
         <div id="modal-start-date-wrapper" class="hidden">
           <label for="input-start-date" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Fecha de Inicio</label>
           <input type="date" id="input-start-date" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
@@ -323,7 +321,7 @@
     </div>
   </div>
 
-  <!-- Custom Confirm Modal (Replacing standard window.confirm) -->
+  <!-- Modal de Confirmación Personalizado -->
   <div id="confirm-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl w-full max-w-sm shadow-xl border border-slate-100 overflow-hidden transform transition-all p-6 space-y-4">
       <div class="flex items-center gap-3 text-amber-500">
@@ -340,7 +338,7 @@
     </div>
   </div>
 
-  <!-- Notification Toast -->
+  <!-- Toast de Notificaciones -->
   <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-10 opacity-0 transition-all duration-300 pointer-events-none bg-slate-900 text-white py-3 px-5 rounded-2xl shadow-xl flex items-center gap-2.5">
     <div id="toast-icon-wrapper" class="p-1 rounded-lg text-emerald-400 bg-white/10">
       <i data-lucide="check-circle-2" class="w-4 h-4"></i>
@@ -349,12 +347,11 @@
   </div>
 
   <footer class="bg-slate-100 border-t border-slate-200 text-center py-6 text-xs text-slate-400 mt-auto">
-    <p>© 2026 Panel Académico Alianza. Datos sincronizados con la captura image_f122f2.png.</p>
+    <p>© 2026 Panel Académico Alianza. Datos sincronizados con la captura image_4387ad.png.</p>
   </footer>
 
-  <!-- -->
   <script>
-    // Base de datos de estudiantes corregida de forma absoluta según la imagen image_f122f2.png
+    // Base de datos de estudiantes corregida y actualizada de forma absoluta según la imagen image_4387ad.png
     const ORIGINAL_DATASET = [
       { id: 1, name: "Andrea Priscila Bustamante Romero", phone: "975800906", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "", attendance: [] },
       { id: 2, name: "Stefanny Rosa Celinda Pacherres Landeo", phone: "934753277", age: "", course: "ETE 5 - Miércoles 7:30pm (Quinto piso)", startDate: "", attendance: [] },
@@ -362,12 +359,12 @@
       { id: 4, name: "Ana Arteaga", phone: "916299083", age: "", course: "Mi Alianza Con Dios", startDate: "", attendance: [] },
       { id: 5, name: "Alvila Ayala Durán", phone: "981275986", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "28/06/2026", attendance: [true, false] },
       { id: 6, name: "José Villavicencio", phone: "995959385", age: "", course: "ETE 5", startDate: "", attendance: [] },
-      { id: 7, name: "Maritza Mnedoza", phone: "918159628", age: "", course: "Panorama Bíblico", startDate: "", attendance: [] },
+      { id: 7, name: "Maritza Mnedoza", phone: "918159628", age: "", course: "Panorama Bíblico - Domingos 4:00pm (Quinto piso)", startDate: "", attendance: [] },
       { id: 8, name: "David Meneses", phone: "931717336", age: "", course: "ETE 5", startDate: "", attendance: [] },
       { id: 9, name: "Carmen Huaman", phone: "953441065", age: "", course: "ETE 5", startDate: "", attendance: [] },
       { id: 10, name: "Jacqueline Yacñac", phone: "969422916", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "05/07/2026", attendance: [false, true] },
-      { id: 11, name: "Fiorella Silvera Llufire", phone: "990991878", age: "", course: "Panorama Bíblico", startDate: "", attendance: [] },
-      { id: 12, name: "Stephany Chiroque", phone: "913639380", age: "", course: "Panorama Bíblico", startDate: "", attendance: [] },
+      { id: 11, name: "Fiorella Silvera Llufire", phone: "990991878", age: "", course: "Panorama Bíblico - Domingos 4:00pm (Quinto piso)", startDate: "", attendance: [] },
+      { id: 12, name: "Stephany Chiroque", phone: "913639380", age: "", course: "Panorama Bíblico - Domingos 4:00pm (Quinto piso)", startDate: "", attendance: [] },
       { id: 13, name: "Luis Cienfuegos Aliaga", phone: "951367828", age: "", course: "ETE 5", startDate: "", attendance: [] },
       { id: 14, name: "Biron Espinal Estela", phone: "933973931", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "05/07/2026", attendance: [false, true] },
       { id: 15, name: "Victoria Moreno", phone: "996595791", age: "", course: "ETE 5", startDate: "", attendance: [] },
@@ -388,7 +385,7 @@
       { id: 30, name: "Danitza Venegas Diaz", phone: "935212355", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 8:30am (Cuarto piso)", startDate: "28/06/2026", attendance: [true, true] },
       { id: 31, name: "Flor Rosales", phone: "965383391", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
       { id: 32, name: "Carmen Luz", phone: "998466792", age: "", course: "ETE 5", startDate: "", attendance: [] },
-      { id: 33, name: "Maria Fernanda Urrutia Cornejo", phone: "922114412", age: "", course: "Panorama Bíblico", startDate: "", attendance: [] },
+      { id: 33, name: "Maria Fernanda Urrutia Cornejo", phone: "922114412", age: "", course: "Panorama Bíblico - Domingos 4:00pm (Quinto piso)", startDate: "", attendance: [] },
       { id: 34, name: "Maria Cueva Guimaray", phone: "993297018", age: "", course: "ETE 5", startDate: "", attendance: [] },
       { id: 35, name: "Raiza Reaño Aguilar", phone: "944964004", age: "", course: "ETE 5", startDate: "", attendance: [] },
       { id: 36, name: "Stefhany Meneses Mendoza", phone: "916634742", age: "30", course: "ETE 5", startDate: "", attendance: [] },
@@ -427,14 +424,28 @@
       { id: 69, name: "Nicolás Huamán", phone: "904654370", age: "16", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "", attendance: [] },
       { id: 70, name: "Rosa Aquino", phone: "925865494", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "", attendance: [] },
       { id: 71, name: "Jonathan Huaman", phone: "", age: "", course: "ETE 5", startDate: "", attendance: [] },
-      { id: 72, name: "David Meneses", phone: "", age: "", course: "Panorama Bíblico", startDate: "", attendance: [] },
+      { id: 72, name: "David Meneses", phone: "", age: "", course: "Panorama Bíblico - Domingos 4:00pm (Quinto piso)", startDate: "", attendance: [] },
       { id: 73, name: "Glenda Meza Arteaga", phone: "", age: "", course: "ETE 5", startDate: "", attendance: [] },
-      { id: 74, name: "Ernestina Asto", phone: "", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 74, name: "Ernestina Asto Huamani", phone: "", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
       { id: 75, name: "Patricia Cornejo", phone: "", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
       { id: 76, name: "Cludes Panebra", phone: "", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
       { id: 77, name: "Maria Jara", phone: "", age: "", course: "ETE 5", startDate: "", attendance: [] },
       { id: 78, name: "Kenberlin Ibeth Navarro Delgadillo", phone: "943263124", age: "25", course: "ETE 5 - Miércoles 7:30pm (Quinto piso)", startDate: "", attendance: [] },
-      { id: 79, name: "Silvia Tenorio Gómez", phone: "994642708", age: "41", course: "ETE 5 - Miércoles 7:30pm (Quinto piso)", startDate: "", attendance: [] }
+      { id: 79, name: "Silvia Tenorio Gómez", phone: "994642708", age: "41", course: "ETE 5 - Miércoles 7:30pm (Quinto piso)", startDate: "", attendance: [] },
+      { id: 80, name: "Nancy Segura de la Cruz", phone: "977355629", age: "58", course: "Panorama Bíblico - Domingos 4:00pm (Quinto piso)", startDate: "", attendance: [] },
+      { id: 81, name: "Mónica Velasquez", phone: "989506302", age: "41", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 82, name: "Claudia Guevara Carrasco", phone: "919548584", age: "19", course: "Panorama Bíblico - Domingos 4:00pm (Quinto piso)", startDate: "", attendance: [] },
+      { id: 83, name: "Irene Torrejon Franco", phone: "980844061", age: "53", course: "ETE 5 - Miércoles 7:30pm (Primer piso)", startDate: "", attendance: [] },
+      { id: 84, name: "Renzo Paolo Paredes Arenas", phone: "961234876", age: "21", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 85, name: "Patricia Alcalá", phone: "992099720", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 86, name: "Ines astulli", phone: "989455327", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 87, name: "Dully Vasquez García", phone: "996767553", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 88, name: "Jovina Salcedo", phone: "917103009", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 89, name: "Magdiel Hernandez León", phone: "994246356", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 90, name: "Nelly", phone: "950745384", age: "", course: "Panorama Bíblico - Domingos 4:00pm (Quinto piso)", startDate: "", attendance: [] },
+      { id: 91, name: "Almendra Vargas", phone: "959710556", age: "", course: "ETE 5", startDate: "", attendance: [] },
+      { id: 92, name: "Amira Garcia Muñoz", phone: "924733266", age: "", course: "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)", startDate: "", attendance: [] },
+      { id: 93, name: "Seanael Rojas", phone: "938123444", age: "", course: "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)", startDate: "", attendance: [] }
     ];
 
     const SPECIAL_COURSES = [
@@ -448,14 +459,14 @@
     let confirmCallback = null;
 
     window.onload = function() {
-      // Usar versión "v3" de almacenamiento local para garantizar la carga del campo edad de la imagen_f122f2.png
+      // Usar versión "v4" de almacenamiento local para garantizar la carga de los nuevos 93 alumnos de image_4387ad.png
       const storedVersion = localStorage.getItem("alianza_db_version");
       
-      if (localStorage.getItem("alianza_students") && storedVersion === "v3") {
+      if (localStorage.getItem("alianza_students") && storedVersion === "v4") {
         students = JSON.parse(localStorage.getItem("alianza_students"));
       } else {
         students = JSON.parse(JSON.stringify(ORIGINAL_DATASET));
-        localStorage.setItem("alianza_db_version", "v3");
+        localStorage.setItem("alianza_db_version", "v4");
         saveToLocalStorage();
       }
       
@@ -500,7 +511,7 @@
       students.forEach(s => {
         if (s.course) coursesSet.add(s.course);
       });
-      // Asegurar que existan todos los cursos de la imagen
+      // Asegurar que existan todos los cursos oficiales de la captura
       const defaultCourses = [
         "Mi Nueva Alianza Con Dios - Domingos 10:00am (Quinto piso)",
         "Mi Nueva Alianza Con Dios - Domingos 8:30am (Cuarto piso)",
@@ -508,7 +519,7 @@
         "ETE 5 - Miércoles 7:30pm (Primer piso)",
         "ETE 5",
         "Mi Alianza Con Dios",
-        "Panorama Bíblico",
+        "Panorama Bíblico - Domingos 4:00pm (Quinto piso)",
         "Compartiendo Mi Fe - Domingos 4:00pm (Cuarto piso)"
       ];
       defaultCourses.forEach(c => coursesSet.add(c));
@@ -683,7 +694,7 @@
         `;
         row.appendChild(tdName);
 
-        // Edad Column
+        // Columna Edad
         const tdAge = document.createElement("td");
         tdAge.className = "py-3.5 px-4 text-center";
         if (student.age) {
@@ -1022,10 +1033,10 @@
     function confirmRestore() {
       showCustomConfirm(
         "Sincronizar Captura",
-        "¿Deseas restablecer y sincronizar los datos locales con la hoja de ruta de la imagen_f122f2.png?",
+        "¿Deseas restablecer y sincronizar los datos locales con la hoja de ruta de la imagen_4387ad.png?",
         function() {
           students = JSON.parse(JSON.stringify(ORIGINAL_DATASET));
-          localStorage.setItem("alianza_db_version", "v3");
+          localStorage.setItem("alianza_db_version", "v4");
           saveToLocalStorage();
           initSelectors();
           updateDashboard();
